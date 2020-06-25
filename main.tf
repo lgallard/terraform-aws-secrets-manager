@@ -17,7 +17,7 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
   count         = length(local.secrets)
   secret_id     = aws_secretsmanager_secret.sm.*.id[count.index]
   secret_string = lookup(element(local.secrets, count.index), "secret_string")
-  secret_binary = lookup(element(local.secrets, count.index), "secret_binary")
+  secret_binary = lookup(element(local.secrets, count.index), "secret_binary") != null ? base64encode(lookup(element(local.secrets, count.index), "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.sm]
 }
 
