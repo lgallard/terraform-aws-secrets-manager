@@ -168,13 +168,13 @@ module "secrets-manager-5" {
 
   secrets = [
     {
-      name                    = "secret-pain"
+      name                    = "secret-plain"
       description             = "My plain text secret"
       recovery_window_in_days = 7
       secret_string           = "This is an example"
     },
    {
-      name        = "secret-key-valu"
+      name        = "secret-key-value"
       description = "This is a key/value secret"
       secret_key_value = {
         username = "user"
