@@ -36,7 +36,7 @@ module "secrets-manager-1" {
 ## Key/Value secrets
 
 ```
-module "secrets-manager-2 {
+module "secrets-manager-2" {
 
   source = "../terraform-aws-secrets-manager"
 
@@ -78,7 +78,7 @@ module "secrets-manager-2 {
 ## Binary secrets
 
 ```
-module "secrets-manager-3 {
+module "secrets-manager-3" {
 
   source = "../terraform-aws-secrets-manager"
 
@@ -113,7 +113,7 @@ module "secrets-manager-3 {
 If yo need to rotate your secrest, use `rotate_secrets` list to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
 
 
-module "secrets-manager-4 {
+module "secrets-manager-4" {
 
   source = "../terraform-aws-secrets-manager"
 
