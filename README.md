@@ -1,12 +1,24 @@
+![Terraform](https://lgallardo.com/images/terraform.jpg)
 # terraform-aws-secrets-manager
 
+Terraform module to create [Amazon Secrets Manager](https://aws.amazon.com/secrets-manager/) resources. 
 
-## Plaintext secrets:
+AWS Secrets Manager helps you protect secrets needed to access your applications, services, and IT resources. The service enables you to easily rotate, manage, and retrieve database credentials, API keys, and other secrets throughout their lifecycle. 
+
+## Examples
+
+Check the [examples](/examples/) folder where you can see the complete compilation of snippets.
+
+## Usage
+
+You can create secrets for plain texts, keys/values and binary data:
+
+### Plain text secrets
 
 ```
 module "secrets-manager-1" {
 
-  source = "../terraform-aws-secrets-manager"
+  source = "lgallard/secrets-manager/aws"
 
   secrets = [
     {
@@ -33,12 +45,12 @@ module "secrets-manager-1" {
 
 ```
 
-## Key/Value secrets
+### Key/Value secrets
 
 ```
 module "secrets-manager-2" {
 
-  source = "../terraform-aws-secrets-manager"
+  source = "lgallard/secrets-manager/aws"
 
   secrets = [
    {
@@ -75,12 +87,12 @@ module "secrets-manager-2" {
 ```
 
 
-## Binary secrets
+### Binary secrets
 
 ```
 module "secrets-manager-3" {
 
-  source = "../terraform-aws-secrets-manager"
+  source = "lgallard/secrets-manager/aws"
 
   secrets = [
     {
@@ -96,6 +108,7 @@ module "secrets-manager-3" {
       tags = {
         app = "web"
       }
+    }
 
  ]
 
@@ -108,27 +121,29 @@ module "secrets-manager-3" {
 }
 
 ```
-## roate secrets
+## Secrets Rotation
 
 If yo need to rotate your secrest, use `rotate_secrets` list to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
 
 
+```
 module "secrets-manager-4" {
 
-  source = "../terraform-aws-secrets-manager"
+  source = "lgallard/secrets-manager/aws"
 
     rotate_secrets = [
     {
       name                    = "secret-rotate-1"
       description             = "This is a secret to be rotated by a lambda"
       secret_string           = "This is an example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678919:function:lambda-rotate-secret"
-      recovery_window_in_days = 7
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      recovery_window_in_days = 15
     },
+    {
       name                    = "secret-rotate-2"
       description             = "This is another secret to be rotated by a lambda"
       secret_string           = "This is another example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678919:function:lambda-rotate-secret"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
       recovery_window_in_days = 7
     },
   ]
@@ -140,4 +155,44 @@ module "secrets-manager-4" {
   }
 
 }
+```
+
+## Several secret definitions
+
+You can define different type of secrets (string, key/balue or binary) in the same `secrets` or `rotate_secrets` list:
+
+```
+module "secrets-manager-5" {
+
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = [
+    {
+      name                    = "secret-pain"
+      description             = "My plain text secret"
+      recovery_window_in_days = 7
+      secret_string           = "This is an example"
+    },
+   {
+      name        = "secret-key-valu"
+      description = "This is a key/value secret"
+      secret_key_value = {
+        username = "user"
+        password = "topsecret"
+      }
+      tags = {
+        app = "web"
+      }
+      recovery_window_in_days = 7
+    },
+ ]
+
+  tags = {
+    Owner       = "DevOps team"
+    Environment = "dev"
+    Terraform   = true
+  }
+
+}
+
 ```

@@ -1,6 +1,6 @@
 module "secrets-manager-1" {
 
-  source = "../../terraform-aws-secrets-manager"
+  source = "lgallard/secrets-manager/aws"
 
   secrets = [
     {
