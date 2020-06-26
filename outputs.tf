@@ -10,11 +10,11 @@ output "secret_arns" {
 
 # Rotate secrets
 output "rotate_secret_ids" {
-  description = "Secret id list"
+  description = "Rotate secret id list"
   value       = aws_secretsmanager_secret.rsm.*.id
 }
 
 output "rotate_secret_arns" {
-  description = "Secret arn list"
+  description = "Rotate secret arn list"
   value       = aws_secretsmanager_secret.rsm.*.arn
 }

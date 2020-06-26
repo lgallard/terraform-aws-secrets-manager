@@ -216,7 +216,7 @@ module "secrets-manager-5" {
 
 | Name | Description |
 |------|-------------|
-| rotate\_secret\_arns | Secret arn list |
-| rotate\_secret\_ids | Secret id list |
+| rotate\_secret\_arns | Rotate secret arn list |
+| rotate\_secret\_ids | Rotate secret id list |
 | secret\_arns | Secret arn list |
 | secret\_ids | Secret id list |
