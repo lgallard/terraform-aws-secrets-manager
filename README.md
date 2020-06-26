@@ -196,3 +196,27 @@ module "secrets-manager-5" {
 }
 
 ```
+## Providers
+
+| Name | Version |
+|------|---------|
+| aws | n/a |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| automatically\_after\_days | Specifies the number of days between automatic scheduled rotations of the secret. | `number` | `30` | no |
+| recovery\_window\_in\_days | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. | `number` | `30` | no |
+| rotate\_secrets | List of secrets to keep and rotate in AWS Secrets Manager | `any` | `[]` | no |
+| secrets | List of secrets to keep in AWS Secrets Manager | `any` | `[]` | no |
+| tags | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| rotate\_secret\_arns | Secret arn list |
+| rotate\_secret\_ids | Secret id list |
+| secret\_arns | Secret arn list |
+| secret\_ids | Secret id list |
