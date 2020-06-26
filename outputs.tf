@@ -7,7 +7,14 @@ output "secret_arns" {
   description = "Secret arn list"
   value       = aws_secretsmanager_secret.sm.*.arn
 }
-output "secret_rotation_enabled" {
-  description = "Secret rotation_enabled list"
-  value       = aws_secretsmanager_secret.sm.*.rotation_enabled
+
+# Rotate secrets
+output "rotate_secret_ids" {
+  description = "Secret id list"
+  value       = aws_secretsmanager_secret.rsm.*.id
+}
+
+output "rotate_secret_arns" {
+  description = "Secret arn list"
+  value       = aws_secretsmanager_secret.rsm.*.arn
 }
