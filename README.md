@@ -123,7 +123,7 @@ module "secrets-manager-3" {
 ```
 ## Secrets Rotation
 
-If yo need to rotate your secrest, use `rotate_secrets` list to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
+If yo need to rotate your secrets, use `rotate_secrets` list to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
 
 
 ```
@@ -159,7 +159,7 @@ module "secrets-manager-4" {
 
 ## Several secret definitions
 
-You can define different type of secrets (string, key/balue or binary) in the same `secrets` or `rotate_secrets` list:
+You can define different type of secrets (string, key/value or binary) in the same `secrets` or `rotate_secrets` list:
 
 ```
 module "secrets-manager-5" {
