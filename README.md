@@ -200,7 +200,7 @@ module "secrets-manager-5" {
 
 | Name | Version |
 |------|---------|
-| aws | n/a |
+| aws | >= 2.67.0 |
 
 ## Inputs
 
