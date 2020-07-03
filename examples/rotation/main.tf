@@ -28,7 +28,7 @@ module "secrets-manager-4" {
 }
 
 # Lambda to rotate secrets
-# AWS temaplates available here https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas)
+# AWS temaplates available here https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas
 module "rotate_secret_lambda" {
   source  = "spring-media/lambda/aws"
   version = "5.2.0"
