@@ -1,3 +1,9 @@
+## 0.2.1 (July 3, 2020)
+
+ENHANCEMENTS:
+
+  * Update rotation lambda example
+
 ## 0.2.0 (June 29, 2020)
 
 FIXES:
