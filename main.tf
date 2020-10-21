@@ -14,11 +14,26 @@ resource "aws_secretsmanager_secret" "sm" {
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
-  count         = length(local.secrets)
+  count         = var.unmanaged ? 0 : length(local.secrets)
   secret_id     = aws_secretsmanager_secret.sm.*.id[count.index]
   secret_string = lookup(element(local.secrets, count.index), "secret_string")
   secret_binary = lookup(element(local.secrets, count.index), "secret_binary") != null ? base64encode(lookup(element(local.secrets, count.index), "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.sm]
+}
+
+resource "aws_secretsmanager_secret_version" "sm-svu" {
+  count         = var.unmanaged ? length(local.secrets) : 0
+  secret_id     = aws_secretsmanager_secret.sm.*.id[count.index]
+  secret_string = lookup(element(local.secrets, count.index), "secret_string")
+  secret_binary = lookup(element(local.secrets, count.index), "secret_binary") != null ? base64encode(lookup(element(local.secrets, count.index), "secret_binary")) : null
+  depends_on    = [aws_secretsmanager_secret.sm]
+
+  lifecycle {
+    ignore_changes = [
+      secret_string,
+      secret_binary,
+    ]
+  }
 }
 
 # Rotate secrets
