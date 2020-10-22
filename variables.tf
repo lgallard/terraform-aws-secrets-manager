@@ -18,6 +18,11 @@ variable "secrets" {
   default     = []
 }
 
+variable "unmanaged" {
+  description = "terraform must ignore secrets lifecycle"
+  default     = false
+}
+
 variable "automatically_after_days" {
   description = "Specifies the number of days between automatic scheduled rotations of the secret."
   type        = number
