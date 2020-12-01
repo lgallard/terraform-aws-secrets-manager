@@ -1,3 +1,9 @@
+## 0.4.1 (December 1, 2020)
+
+FIXES:
+
+  * Fix typo in REDME and improve variable description
+
 ## 0.4.0 (December 1, 2020)
 
 ENHANCEMENTS:
