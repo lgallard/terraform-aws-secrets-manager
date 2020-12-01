@@ -1,3 +1,11 @@
+## 0.4.0 (December 1, 2020)
+
+ENHANCEMENTS:
+
+  * Add support for unmanaged rotated secrets:  Avoid rotation of secrets by subsequent runs of Terraform
+
+Thanks @moliver-aicradle
+
 ## 0.3.0 (October 22, 2020)
 
 ENHANCEMENTS:
