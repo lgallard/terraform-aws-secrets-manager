@@ -19,7 +19,7 @@ variable "secrets" {
 }
 
 variable "unmanaged" {
-  description = "Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change the secrets"
+  description = "Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change the secretsor the rotation of secrets by subsequent runs of Terraform"
   type        = bool
   default     = false
 }
