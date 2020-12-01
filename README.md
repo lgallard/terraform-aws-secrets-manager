@@ -211,7 +211,7 @@ module "secrets-manager-5" {
 | rotate\_secrets | List of secrets to keep and rotate in AWS Secrets Manager | `any` | `[]` | no |
 | secrets | List of secrets to keep in AWS Secrets Manager | `any` | `[]` | no |
 | tags | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
-| unmanaged | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change the secretsor the rotation of secrets by subsequent runs of Terraform | `bool` | `false` | no |
+| unmanaged | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change or rotate the secrets by subsequent runs of Terraform | `bool` | `false` | no |
 
 ## Outputs
 
