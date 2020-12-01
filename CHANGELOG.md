@@ -2,7 +2,7 @@
 
 FIXES:
 
-  * Fix typo in REDME and improve variable description
+  * Fix typo in README and improve variable description
 
 ## 0.4.0 (December 1, 2020)
 
