@@ -1,3 +1,10 @@
+## 0.4.2 (June 10, 2021)
+
+ENHANCEMENTS:
+
+  * Add pre-commit script
+  * Update README
+
 ## 0.4.1 (December 1, 2020)
 
 FIXES:
