@@ -1,9 +1,9 @@
 ![Terraform](https://lgallardo.com/images/terraform.jpg)
 # terraform-aws-secrets-manager
 
-Terraform module to create [Amazon Secrets Manager](https://aws.amazon.com/secrets-manager/) resources. 
+Terraform module to create [Amazon Secrets Manager](https://aws.amazon.com/secrets-manager/) resources.
 
-AWS Secrets Manager helps you protect secrets needed to access your applications, services, and IT resources. The service enables you to easily rotate, manage, and retrieve database credentials, API keys, and other secrets throughout their lifecycle. 
+AWS Secrets Manager helps you protect secrets needed to access your applications, services, and IT resources. The service enables you to easily rotate, manage, and retrieve database credentials, API keys, and other secrets throughout their lifecycle.
 
 ## Examples
 
@@ -196,28 +196,52 @@ module "secrets-manager-5" {
 }
 
 ```
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 2.67.0 |
+
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 2.67.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 2.67.0 |
+
+## Modules
+
+No modules.
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_secretsmanager_secret.rsm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret.sm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret_rotation.rsm-sr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
+| [aws_secretsmanager_secret_version.rsm-sv](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
+| [aws_secretsmanager_secret_version.rsm-svu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
+| [aws_secretsmanager_secret_version.sm-sv](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
+| [aws_secretsmanager_secret_version.sm-svu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| automatically\_after\_days | Specifies the number of days between automatic scheduled rotations of the secret. | `number` | `30` | no |
-| recovery\_window\_in\_days | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. | `number` | `30` | no |
-| rotate\_secrets | List of secrets to keep and rotate in AWS Secrets Manager | `any` | `[]` | no |
-| secrets | List of secrets to keep in AWS Secrets Manager | `any` | `[]` | no |
-| tags | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
-| unmanaged | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change or rotate the secrets by subsequent runs of Terraform | `bool` | `false` | no |
+| <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. | `number` | `30` | no |
+| <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. | `number` | `30` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | List of secrets to keep and rotate in AWS Secrets Manager | `any` | `[]` | no |
+| <a name="input_secrets"></a> [secrets](#input\_secrets) | List of secrets to keep in AWS Secrets Manager | `any` | `[]` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
+| <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change or rotate the secrets by subsequent runs of Terraform | `bool` | `false` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| rotate\_secret\_arns | Rotate secret arn list |
-| rotate\_secret\_ids | Rotate secret id list |
-| secret\_arns | Secret arn list |
-| secret\_ids | Secret id list |
+| <a name="output_rotate_secret_arns"></a> [rotate\_secret\_arns](#output\_rotate\_secret\_arns) | Rotate secret arn list |
+| <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Rotate secret id list |
+| <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Secret arn list |
+| <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Secret id list |
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
