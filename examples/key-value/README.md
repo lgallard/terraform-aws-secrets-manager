@@ -1,3 +1,5 @@
+# Key-Value example
+```
 module "secrets-manager-2" {
 
   #source = "lgallard/secrets-manager/aws"
@@ -31,3 +33,4 @@ module "secrets-manager-2" {
     Terraform   = true
   }
 }
+```

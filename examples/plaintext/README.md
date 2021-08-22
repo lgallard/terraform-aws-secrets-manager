@@ -1,3 +1,4 @@
+# Plain text example
 module "secrets-manager-1" {
 
   #source = "lgallard/secrets-manager/aws"

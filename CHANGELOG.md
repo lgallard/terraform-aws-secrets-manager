@@ -1,3 +1,10 @@
+## 0.5.0 (August 22, 2021)
+
+ENHANCEMENTS:
+
+  * Chnage secret list to map definitions
+  * Update READMEs
+
 ## 0.4.2 (June 10, 2021)
 
 ENHANCEMENTS:

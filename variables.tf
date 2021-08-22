@@ -6,16 +6,16 @@ variable "recovery_window_in_days" {
 
 # Secrets
 variable "rotate_secrets" {
-  description = "List of secrets to keep and rotate in AWS Secrets Manager"
+  description = "Map of secrets to keep and rotate in AWS Secrets Manager"
   type        = any
-  default     = []
+  default     = {}
 }
 
 # Secrets
 variable "secrets" {
-  description = "List of secrets to keep in AWS Secrets Manager"
+  description = "Map of secrets to keep in AWS Secrets Manager"
   type        = any
-  default     = []
+  default     = {}
 }
 
 variable "unmanaged" {

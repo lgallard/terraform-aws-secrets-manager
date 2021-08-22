@@ -1,3 +1,5 @@
+# Binary example
+```
 module "secrets-manager-3" {
 
   #source = "lgallard/secrets-manager/aws"
@@ -26,3 +28,4 @@ module "secrets-manager-3" {
     Terraform   = true
   }
 }
+```

@@ -1,3 +1,5 @@
+# Rotation example
+```
 module "secrets-manager-4" {
 
   #source = "lgallard/secrets-manager/aws"
@@ -52,3 +54,4 @@ resource "aws_lambda_permission" "allow_secret_manager_call_Lambda" {
   action        = "lambda:InvokeFunction"
   principal     = "secretsmanager.amazonaws.com"
 }
+```
