@@ -6,7 +6,7 @@ resource "aws_secretsmanager_secret" "sm" {
   kms_key_id              = lookup(each.value, "kms_key_id", null)
   policy                  = lookup(each.value, "policy", null)
   recovery_window_in_days = lookup(each.value, "recovery_window_in_days", var.recovery_window_in_days)
-  tags                    = merge(var.tags, lookup(each.value, "tags"))
+  tags                    = merge(var.tags, lookup(each.value, "tags", null))
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
@@ -15,7 +15,7 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
   }
   secret_id     = each.key
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_string") == null || lookup(each.value, "secret_binary") == null ? null : base64encode(lookup(each.value, "secret_binary"))
+  secret_binary = lookup(each.value, "secret_string", null) == null || lookup(each.value, "secret_binary", null) == null ? null : base64encode(lookup(each.value, "secret_binary"))
   depends_on    = [aws_secretsmanager_secret.sm]
 }
 
@@ -25,7 +25,7 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
   }
   secret_id     = each.key
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_string") == null || lookup(each.value, "secret_binary") == null ? null : base64encode(lookup(each.value, "secret_binary"))
+  secret_binary = lookup(each.value, "secret_string", null) == null || lookup(each.value, "secret_binary", null) == null ? null : base64encode(lookup(each.value, "secret_binary"))
   depends_on    = [aws_secretsmanager_secret.sm]
 
   lifecycle {
@@ -45,7 +45,7 @@ resource "aws_secretsmanager_secret" "rsm" {
   kms_key_id              = lookup(each.value, "kms_key_id")
   policy                  = lookup(each.value, "policy")
   recovery_window_in_days = lookup(each.value, "recovery_window_in_days")
-  tags                    = merge(var.tags, lookup(each.value, "tags"))
+  tags                    = merge(var.tags, lookup(each.value, "tags", null))
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {
@@ -54,7 +54,7 @@ resource "aws_secretsmanager_secret_version" "rsm-sv" {
   }
   secret_id     = each.key
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_string") == null || lookup(each.value, "secret_binary") == null ? null : base64encode(lookup(each.value, "secret_binary"))
+  secret_binary = lookup(each.value, "secret_string", null) == null || lookup(each.value, "secret_binary", null) == null ? null : base64encode(lookup(each.value, "secret_binary"))
   depends_on    = [aws_secretsmanager_secret.rsm]
 }
 
@@ -64,7 +64,7 @@ resource "aws_secretsmanager_secret_version" "rsm-svu" {
   }
   secret_id     = each.key
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_string") == null || lookup(each.value, "secret_binary") == null ? null : base64encode(lookup(each.value, "secret_binary"))
+  secret_binary = lookup(each.value, "secret_string", null) == null || lookup(each.value, "secret_binary", null) == null ? null : base64encode(lookup(each.value, "secret_binary"))
   depends_on    = [aws_secretsmanager_secret.rsm]
 
   lifecycle {
