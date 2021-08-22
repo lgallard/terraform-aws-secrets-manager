@@ -1,7 +1,7 @@
 resource "aws_secretsmanager_secret" "sm" {
   for_each                = var.secrets
-  name                    = each.key
-  name_prefix             = lookup(each.value, "name_prefix", null)
+  name                    = lookup(each.value, "name_prefix", null) == null ? each.key : null
+  name_prefix             = lookup(each.value, "name_prefix", null) != null ? lookup(each.value, "name_prefix") : null
   description             = lookup(each.value, "description", null)
   kms_key_id              = lookup(each.value, "kms_key_id", null)
   policy                  = lookup(each.value, "policy", null)
@@ -35,12 +35,12 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
 # Rotate secrets
 resource "aws_secretsmanager_secret" "rsm" {
   for_each                = var.rotate_secrets
-  name                    = lookup(each.value, "name")
-  name_prefix             = lookup(each.value, "name_prefix")
+  name                    = lookup(each.value, "name_prefix", null) == null ? each.key : null
+  name_prefix             = lookup(each.value, "name_prefix", null) != null ? lookup(each.value, "name_prefix") : null
   description             = lookup(each.value, "description")
-  kms_key_id              = lookup(each.value, "kms_key_id")
-  policy                  = lookup(each.value, "policy")
-  recovery_window_in_days = lookup(each.value, "recovery_window_in_days")
+  kms_key_id              = lookup(each.value, "kms_key_id", null)
+  policy                  = lookup(each.value, "policy", null)
+  recovery_window_in_days = lookup(each.value, "recovery_window_in_days", var.recovery_window_in_days)
   tags                    = merge(var.tags, lookup(each.value, "tags", null))
 }
 
@@ -73,6 +73,6 @@ resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
   rotation_lambda_arn = lookup(each.value, "rotation_lambda_arn")
 
   rotation_rules {
-    automatically_after_days = lookup(each.value, "automatically_after_days")
+    automatically_after_days = lookup(each.value, "automatically_after_days", var.automatically_after_days)
   }
 }
