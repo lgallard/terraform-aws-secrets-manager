@@ -210,6 +210,68 @@ module "secrets-manager-5" {
 
 }
 ```
+
+## Version 0.5.0+ breaking changes
+Issue [#13](https://github.com/lgallard/terraform-aws-secrets-manager/issues/13) highlighted the fact that changing the secrets order will recreate the secrets (for example, adding a new secret in the top of the list o removing a secret that is not the last one). The suggested approach to tackle this issue was to use `for_each` to iterate over a map of secrets.
+
+Version 0.5.0 has this implementation, but it's not backward compatible. Therefore you must migrate your Terraform code and the objects in the tfstate.
+
+### Migrating the code:
+
+Before 0.5.0 your secrets were defined as list as follow:
+
+```
+  secrets = [
+    {
+      name                    = "secret-1"
+      description             = "My secret 1"
+      recovery_window_in_days = 7
+      secret_string           = "This is an example"
+    },
+  ]
+
+```
+
+After version 0.5.0 you have to define you secrets as a map:
+
+```
+  secrets = {
+    secret-1 = {
+      description             = "My secret 1"
+      recovery_window_in_days = 7
+      secret_string           = "This is an example"
+    },
+  }
+```
+
+Notice that the map key is the name of the secret, thefore a `name` field is not needed anymore.
+
+### Migrating the objects in the tfstate file
+
+To avoid recreating your already deploy secrets you can rename or move the object in the tfstate file as follow:
+
+```
+terraform state mv 'module.secrets-manager-1.aws_secretsmanager_secret_version.sm-sv['0']' 'module.secrets-manager-1.aws_secretsmanager_secret_version.sm-sv["secret-1"]'
+```
+
+Another option is to use a script to iterate over your secrets. In the [migration-scripts](/examples/migration-scripts) folder you'll find a couple of scripts that can be used as a starting point.
+
+For example, to migrate a module named `secrets-manager-1` run the script as follow:
+
+```
+$ ./secret_list_to_map.sh secrets-manager-1
+
+Move "module.secrets-manager-1.aws_secretsmanager_secret.sm[0]" to "module.secrets-manager-1.aws_secretsmanager_secret.sm[\"secret-1\"]"
+Successfully moved 1 object(s).
+Move "module.secrets-manager-1.aws_secretsmanager_secret_version.sm-sv[0]" to "module.secrets-manager-1.aws_secretsmanager_secret_version.sm-sv[\"secret-1\"]"
+Successfully moved 1 object(s).
+Move "module.secrets-manager-1.aws_secretsmanager_secret.sm[1]" to "module.secrets-manager-1.aws_secretsmanager_secret.sm[\"secret-2\"]"
+Successfully moved 1 object(s).
+Move "module.secrets-manager-1.aws_secretsmanager_secret_version.sm-sv[1]" to "module.secrets-manager-1.aws_secretsmanager_secret_version.sm-sv[\"secret-2\"]"
+Successfully moved 1 object(s).
+
+```
+
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
