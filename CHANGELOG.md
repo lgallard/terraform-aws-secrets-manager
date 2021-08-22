@@ -2,7 +2,7 @@
 
 ENHANCEMENTS:
 
-  * Chnage secret list to map definitions
+  * Change secret list to map definitions
   * Update READMEs
 
 ## 0.4.2 (June 10, 2021)
