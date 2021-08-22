@@ -1,20 +1,20 @@
 output "secret_ids" {
-  description = "Secret id list"
-  value       = aws_secretsmanager_secret.sm.*.id
+  description = "Secret ids map"
+  value       = { for k, v in aws_secretsmanager_secret.sm : k => v if k == "id" }
 }
 
 output "secret_arns" {
-  description = "Secret arn list"
-  value       = aws_secretsmanager_secret.sm.*.arn
+  description = "Secrets arns map"
+  value       = { for k, v in aws_secretsmanager_secret.sm : k => v if k == "arn" }
 }
 
 # Rotate secrets
 output "rotate_secret_ids" {
-  description = "Rotate secret id list"
-  value       = aws_secretsmanager_secret.rsm.*.id
+  description = "Rotate secret ids map"
+  value       = { for k, v in aws_secretsmanager_secret.rsm : k => v if k == "id" }
 }
 
 output "rotate_secret_arns" {
-  description = "Rotate secret arn list"
-  value       = aws_secretsmanager_secret.rsm.*.arn
+  description = "Rotate secret arns map"
+  value       = { for k, v in aws_secretsmanager_secret.rsm : k => v if k == "arn" }
 }
