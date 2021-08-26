@@ -1,3 +1,9 @@
+## 0.5.1 (August 26, 2021)
+
+FIXES:
+
+  * Fix secret map output
+
 ## 0.5.0 (August 22, 2021)
 
 ENHANCEMENTS:
