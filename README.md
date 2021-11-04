@@ -114,7 +114,7 @@ module "secrets-manager-3" {
 ```
 ## Secrets Rotation
 
-If yo need to rotate your secrets, use `rotate_secrets` map to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
+If you need to rotate your secrets, use `rotate_secrets` map to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
 
 
 ```
