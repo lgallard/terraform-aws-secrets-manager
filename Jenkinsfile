@@ -9,7 +9,6 @@ pipeline {
          }
      stage('Test') {
         steps {
-           sh "cd /examples/key-value"
            sh "terraform init"
            sh "terraform plan"
            sh "terraform apply -auto-approve"
