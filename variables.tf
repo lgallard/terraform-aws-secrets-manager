@@ -4,7 +4,7 @@ variable "recovery_window_in_days" {
   default     = {}
 }
 
-# Secrets
+#Secrets
 variable "rotate_secrets" {
   description = "Map of secrets to keep and rotate in AWS Secrets Manager"
   type        = any
