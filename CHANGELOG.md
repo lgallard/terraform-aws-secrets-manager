@@ -1,3 +1,9 @@
+## 0.5.2 (Jan 2, 2022)
+
+ENHANCEMENTS:
+
+  * Add secret policy examples
+
 ## 0.5.1 (August 26, 2021)
 
 FIXES:
