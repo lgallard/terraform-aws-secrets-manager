@@ -7,6 +7,13 @@ resource "aws_secretsmanager_secret" "sm" {
   policy                  = lookup(each.value, "policy", null)
   recovery_window_in_days = lookup(each.value, "recovery_window_in_days", var.recovery_window_in_days)
   tags                    = merge(var.tags, lookup(each.value, "tags", null))
+  dynamic "replica" {
+    for_each = var.replica_regions
+    content {
+      region = replica.key
+      kms_key_id = replica.value
+    }
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
