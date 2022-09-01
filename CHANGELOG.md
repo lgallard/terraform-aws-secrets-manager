@@ -1,3 +1,9 @@
+## 0.5.3 (Aug 29, 2022)
+
+ENHANCEMENTS:
+
+  * Adds replica support
+
 ## 0.5.2 (Jan 2, 2022)
 
 ENHANCEMENTS:
