@@ -20,8 +20,8 @@ variable "secrets" {
 
 variable "replica_regions" {
   description = "Map of regions to replicate the secret as the key and related kms_key_id as the value"
-  type = map
-  default = {}
+  type        = map(any)
+  default     = {}
 }
 
 variable "unmanaged" {

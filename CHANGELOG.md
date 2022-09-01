@@ -1,3 +1,9 @@
+## 0.6.0 (Sep 1, 2022)
+
+ENHANCEMENTS:
+
+  * Adding Replica support to Secrets (thanks @ppapishe)
+
 ## 0.5.3 (Aug 29, 2022)
 
 ENHANCEMENTS:
