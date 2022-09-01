@@ -10,7 +10,7 @@ resource "aws_secretsmanager_secret" "sm" {
   dynamic "replica" {
     for_each = var.replica_regions
     content {
-      region = replica.key
+      region     = replica.key
       kms_key_id = replica.value
     }
   }
