@@ -1,3 +1,9 @@
+## 0.6.1 (October 19, 2022)
+
+FIXES:
+
+  * Patch for the missing dependency in the "rsm-sr" resource (thanks @cschwarze)
+
 ## 0.6.0 (Sep 1, 2022)
 
 ENHANCEMENTS:
