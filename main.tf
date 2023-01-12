@@ -22,6 +22,11 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string", null) : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
   secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.sm]
+  lifecycle {
+    ignore_changes = [
+      secret_id,
+    ]
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "sm-svu" {
@@ -35,6 +40,7 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
     ignore_changes = [
       secret_string,
       secret_binary,
+      secret_id,
     ]
   }
 }
@@ -57,6 +63,11 @@ resource "aws_secretsmanager_secret_version" "rsm-sv" {
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
   secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.rsm]
+  lifecycle {
+    ignore_changes = [
+      secret_id,
+    ]
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-svu" {
@@ -70,6 +81,7 @@ resource "aws_secretsmanager_secret_version" "rsm-svu" {
     ignore_changes = [
       secret_string,
       secret_binary,
+      secret_id,
     ]
   }
 }
@@ -83,4 +95,10 @@ resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
     automatically_after_days = lookup(each.value, "automatically_after_days", var.automatically_after_days)
   }
   depends_on    = [aws_secretsmanager_secret.rsm]
+  
+  lifecycle {
+    ignore_changes = [
+      secret_id,
+    ]
+  }
 }
