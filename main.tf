@@ -94,8 +94,8 @@ resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
   rotation_rules {
     automatically_after_days = lookup(each.value, "automatically_after_days", var.automatically_after_days)
   }
-  depends_on    = [aws_secretsmanager_secret.rsm]
-  
+  depends_on = [aws_secretsmanager_secret.rsm]
+
   lifecycle {
     ignore_changes = [
       secret_id,
