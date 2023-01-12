@@ -1,3 +1,9 @@
+## 0.6.2 (January 11, 2023)
+
+FIXES:
+
+  * Add lifecycle ignore for `secret_id`
+
 ## 0.6.1 (October 19, 2022)
 
 FIXES:
