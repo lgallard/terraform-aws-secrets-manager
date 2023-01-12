@@ -2,7 +2,7 @@
 
 FIXES:
 
-  * Add lifecycle ignore for `secret_id`
+  * Add lifecycle ignore for `secret_id` (thanks @jmonte-sph)
 
 ## 0.6.1 (October 19, 2022)
 
