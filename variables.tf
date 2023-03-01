@@ -18,12 +18,6 @@ variable "secrets" {
   default     = {}
 }
 
-variable "replica_regions" {
-  description = "Map of regions to replicate the secret as the key and related kms_key_id as the value"
-  type        = map(any)
-  default     = {}
-}
-
 variable "unmanaged" {
   description = "Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change or rotate the secrets by subsequent runs of Terraform"
   type        = bool

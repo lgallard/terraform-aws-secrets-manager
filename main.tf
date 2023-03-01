@@ -8,7 +8,7 @@ resource "aws_secretsmanager_secret" "sm" {
   recovery_window_in_days = lookup(each.value, "recovery_window_in_days", var.recovery_window_in_days)
   tags                    = merge(var.tags, lookup(each.value, "tags", null))
   dynamic "replica" {
-    for_each = var.replica_regions
+    for_each = lookup(each.value, "replica_regions", {})
     content {
       region     = replica.key
       kms_key_id = replica.value

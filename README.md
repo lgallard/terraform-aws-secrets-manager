@@ -211,6 +211,49 @@ module "secrets-manager-5" {
 }
 ```
 
+## Secrets replication
+
+You can define different type of secrets (string, key/value or binary) in the same `secrets` or `rotate_secrets` map:
+
+```
+module "secrets-manager-6" {
+
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    secret-plain = {
+      description             = "My plain text secret"
+      recovery_window_in_days = 7
+      secret_string           = "This is an example"
+      replica_regions = {
+        us-west-2 = "arn:aws:kms:us-west-2:1234567890:key/12345678-1234-1234-1234-123456789012"
+      }
+    },
+    secret-key-value = {
+      description = "This is a key/value secret"
+      secret_key_value = {
+        username = "user"
+        password = "topsecret"
+      }
+      replica_regions = {
+        us-west-1 = "arn:aws:kms:us-west-1:1234567890:key/12345678-1234-1234-1234-123456789012"
+      }
+      tags = {
+        app = "web"
+      }
+      recovery_window_in_days = 7
+    },
+  }
+
+  tags = {
+    Owner       = "DevOps team"
+    Environment = "dev"
+    Terraform   = true
+  }
+
+}
+```
+
 ## Version 0.5.0+ breaking changes
 Issue [#13](https://github.com/lgallard/terraform-aws-secrets-manager/issues/13) highlighted the fact that changing the secrets order will recreate the secrets (for example, adding a new secret in the top of the list o removing a secret that is not the last one). The suggested approach to tackle this issue was to use `for_each` to iterate over a map of secrets.
 
@@ -283,7 +326,7 @@ Successfully moved 1 object(s).
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.28.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.56.0 |
 
 ## Modules
 
@@ -307,7 +350,6 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. | `number` | `30` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. | `number` | `30` | no |
-| <a name="input_replica_regions"></a> [replica\_regions](#input\_replica\_regions) | Map of regions to replicate the secret as the key and related kms\_key\_id as the value | `map(any)` | `{}` | no |
 | <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager | `any` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager | `any` | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
