@@ -1,3 +1,9 @@
+## 0.7.0 (April 5, 2023)
+
+ENHANCEMENTS:
+
+* Add separate secrets replication configuration (thanks @wiseelf)
+
 ## 0.6.2 (January 11, 2023)
 
 FIXES:
