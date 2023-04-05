@@ -326,7 +326,7 @@ Successfully moved 1 object(s).
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.56.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.61.0 |
 
 ## Modules
 
