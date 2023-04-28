@@ -1,6 +1,7 @@
 module "secrets-manager-6" {
 
-  source = "lgallard/secrets-manager/aws"
+  #source = "lgallard/secrets-manager/aws"
+  source = "../../"
 
   secrets = {
     secret-plain = {
