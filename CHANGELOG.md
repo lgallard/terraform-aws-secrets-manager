@@ -1,3 +1,10 @@
+## 0.8.0 (April 28, 2023)
+
+ENHANCEMENTS:
+
+* Add ´force_overwrite_replica_secret´ (thanks @btougeiro)
+* Add replication example
+
 ## 0.7.0 (April 5, 2023)
 
 ENHANCEMENTS:
