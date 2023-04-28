@@ -228,6 +228,7 @@ module "secrets-manager-6" {
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:1234567890:key/12345678-1234-1234-1234-123456789012"
       }
+      force_overwrite_replica_secret = true
     },
     secret-key-value = {
       description = "This is a key/value secret"
@@ -238,6 +239,7 @@ module "secrets-manager-6" {
       replica_regions = {
         us-west-1 = "arn:aws:kms:us-west-1:1234567890:key/12345678-1234-1234-1234-123456789012"
       }
+      force_overwrite_replica_secret = false
       tags = {
         app = "web"
       }
