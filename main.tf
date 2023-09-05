@@ -11,8 +11,8 @@ resource "aws_secretsmanager_secret" "sm" {
   dynamic "replica" {
     for_each = lookup(each.value, "replica_regions", {})
     content {
-      region     = replica.key
-      kms_key_id = replica.value
+      region     = try(replica.value.region, replica.key)
+      kms_key_id = try(replica.value.kms_key_id, null)      
     }
   }
 }
