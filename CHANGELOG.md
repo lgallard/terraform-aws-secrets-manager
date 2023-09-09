@@ -1,3 +1,10 @@
+## 0.9.0 (September 8, 2023)
+
+ENHANCEMENTS:
+
+* Allow empty replica region `kms_key_id` to use AWS default (thanks @siteopsio)
+* Update README file in replication example (thanks @siteopsio)
+
 ## 0.8.0 (April 28, 2023)
 
 ENHANCEMENTS:
