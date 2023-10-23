@@ -1,6 +1,6 @@
 resource "aws_secretsmanager_secret" "sm" {
   for_each                       = var.secrets
-  name                           = lookup(each.value, "name_prefix", null) == null ? each.key : null
+  name                           = lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) == null ? each.key : (lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) != null ? each.value.name : null)
   name_prefix                    = lookup(each.value, "name_prefix", null) != null ? lookup(each.value, "name_prefix") : null
   description                    = lookup(each.value, "description", null)
   kms_key_id                     = lookup(each.value, "kms_key_id", null)
@@ -49,7 +49,7 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
 # Rotate secrets
 resource "aws_secretsmanager_secret" "rsm" {
   for_each                       = var.rotate_secrets
-  name                           = lookup(each.value, "name_prefix", null) == null ? each.key : null
+  name                           = lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) == null ? each.key : (lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) != null ? each.value.name : null)
   name_prefix                    = lookup(each.value, "name_prefix", null) != null ? lookup(each.value, "name_prefix") : null
   description                    = lookup(each.value, "description")
   kms_key_id                     = lookup(each.value, "kms_key_id", null)
