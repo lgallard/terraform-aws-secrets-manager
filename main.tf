@@ -19,7 +19,7 @@ resource "aws_secretsmanager_secret" "sm" {
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
   for_each      = { for k, v in var.secrets : k => v if !var.unmanaged }
-  secret_id     = each.key
+  secret_id     = aws_secretsmanager_secret.sm[index].arn
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string", null) : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
   secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.sm]
@@ -32,7 +32,7 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
 
 resource "aws_secretsmanager_secret_version" "sm-svu" {
   for_each      = { for k, v in var.secrets : k => v if var.unmanaged }
-  secret_id     = each.key
+  secret_id     = aws_secretsmanager_secret.sm[index].arn
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
   secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.sm]
@@ -61,7 +61,7 @@ resource "aws_secretsmanager_secret" "rsm" {
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {
   for_each      = { for k, v in var.rotate_secrets : k => v if !var.unmanaged }
-  secret_id     = each.key
+  secret_id     = aws_secretsmanager_secret.rsm[index].arn
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
   secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.rsm]
@@ -74,7 +74,7 @@ resource "aws_secretsmanager_secret_version" "rsm-sv" {
 
 resource "aws_secretsmanager_secret_version" "rsm-svu" {
   for_each      = { for k, v in var.rotate_secrets : k => v if var.unmanaged }
-  secret_id     = each.key
+  secret_id     = aws_secretsmanager_secret.rsm[index].arn
   secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
   secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
   depends_on    = [aws_secretsmanager_secret.rsm]
@@ -90,7 +90,7 @@ resource "aws_secretsmanager_secret_version" "rsm-svu" {
 
 resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
   for_each            = var.rotate_secrets
-  secret_id           = each.key
+  secret_id           = aws_secretsmanager_secret.rsm[index].arn
   rotation_lambda_arn = lookup(each.value, "rotation_lambda_arn")
 
   rotation_rules {
