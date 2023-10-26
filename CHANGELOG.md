@@ -1,3 +1,10 @@
+## 0.10.0 (October 26, 2023)
+
+FIXES:
+
+* Update secret version and secret rotation to support using name_prefix (thanks @bensharp1)
+* Allow 'Name' parameter to overwrite each.key as Secret Name (thanks @bensharp1)
+
 ## 0.9.0 (September 8, 2023)
 
 ENHANCEMENTS:
