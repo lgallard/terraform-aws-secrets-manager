@@ -1,3 +1,9 @@
+## 0.10.1 (October 29, 2023)
+
+FIXES:
+
+* Not defined index in context issue
+
 ## 0.10.0 (October 26, 2023)
 
 FIXES:
