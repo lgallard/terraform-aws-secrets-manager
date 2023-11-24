@@ -30,6 +30,12 @@ variable "automatically_after_days" {
   default     = 30
 }
 
+variable "version_stages" {
+  description = "List of version stages to be handled. Kept as null for backwards compatibility."
+  type        = list(string)
+  default     = null
+}
+
 # Tags
 variable "tags" {
   description = "Specifies a key-value map of user-defined tags that are attached to the secret."
