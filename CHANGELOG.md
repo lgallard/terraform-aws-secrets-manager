@@ -1,3 +1,9 @@
+## 0.11.0 (December 19, 2023)
+
+ENHANCEMENTS:
+
+* Allow to use ´version_stages´ on secret versions (thanks @magmax)
+
 ## 0.10.1 (October 29, 2023)
 
 FIXES:
