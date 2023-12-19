@@ -18,11 +18,12 @@ resource "aws_secretsmanager_secret" "sm" {
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
-  for_each      = { for k, v in var.secrets : k => v if !var.unmanaged }
-  secret_id     = aws_secretsmanager_secret.sm[each.key].arn
-  secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string", null) : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
-  depends_on    = [aws_secretsmanager_secret.sm]
+  for_each       = { for k, v in var.secrets : k => v if !var.unmanaged }
+  secret_id      = aws_secretsmanager_secret.sm[each.key].arn
+  secret_string  = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string", null) : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
+  secret_binary  = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
+  version_stages = var.version_stages
+  depends_on     = [aws_secretsmanager_secret.sm]
   lifecycle {
     ignore_changes = [
       secret_id,
@@ -31,11 +32,12 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
 }
 
 resource "aws_secretsmanager_secret_version" "sm-svu" {
-  for_each      = { for k, v in var.secrets : k => v if var.unmanaged }
-  secret_id     = aws_secretsmanager_secret.sm[each.key].arn
-  secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
-  depends_on    = [aws_secretsmanager_secret.sm]
+  for_each       = { for k, v in var.secrets : k => v if var.unmanaged }
+  secret_id      = aws_secretsmanager_secret.sm[each.key].arn
+  secret_string  = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
+  secret_binary  = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
+  version_stages = var.version_stages
+  depends_on     = [aws_secretsmanager_secret.sm]
 
   lifecycle {
     ignore_changes = [
@@ -60,11 +62,12 @@ resource "aws_secretsmanager_secret" "rsm" {
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {
-  for_each      = { for k, v in var.rotate_secrets : k => v if !var.unmanaged }
-  secret_id     = aws_secretsmanager_secret.rsm[each.key].arn
-  secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
-  depends_on    = [aws_secretsmanager_secret.rsm]
+  for_each       = { for k, v in var.rotate_secrets : k => v if !var.unmanaged }
+  secret_id      = aws_secretsmanager_secret.rsm[each.key].arn
+  secret_string  = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
+  secret_binary  = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
+  version_stages = var.version_stages
+  depends_on     = [aws_secretsmanager_secret.rsm]
   lifecycle {
     ignore_changes = [
       secret_id,
@@ -73,11 +76,12 @@ resource "aws_secretsmanager_secret_version" "rsm-sv" {
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-svu" {
-  for_each      = { for k, v in var.rotate_secrets : k => v if var.unmanaged }
-  secret_id     = aws_secretsmanager_secret.rsm[each.key].arn
-  secret_string = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
-  secret_binary = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
-  depends_on    = [aws_secretsmanager_secret.rsm]
+  for_each       = { for k, v in var.rotate_secrets : k => v if var.unmanaged }
+  secret_id      = aws_secretsmanager_secret.rsm[each.key].arn
+  secret_string  = lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)
+  secret_binary  = lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null
+  version_stages = var.version_stages
+  depends_on     = [aws_secretsmanager_secret.rsm]
 
   lifecycle {
     ignore_changes = [
