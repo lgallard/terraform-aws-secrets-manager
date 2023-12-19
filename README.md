@@ -356,6 +356,7 @@ No modules.
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager | `any` | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
 | <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change or rotate the secrets by subsequent runs of Terraform | `bool` | `false` | no |
+| <a name="input_version_stages"></a> [version\_stages](#input\_version\_stages) | List of version stages to be handled. Kept as null for backwards compatibility. | `list(string)` | `null` | no |
 
 ## Outputs
 
