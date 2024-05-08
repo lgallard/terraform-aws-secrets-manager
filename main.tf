@@ -108,3 +108,9 @@ resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
     ]
   }
 }
+
+resource "random_password" "password" {
+  length           = var.length_password
+  special          = var.special_characters
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
