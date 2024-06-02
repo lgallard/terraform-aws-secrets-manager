@@ -1,3 +1,9 @@
+## 0.11.1 (June 3, 2024)
+
+ENHANCEMENTS:
+
+* Add Dependabot
+
 ## 0.11.0 (December 19, 2023)
 
 ENHANCEMENTS:
