@@ -1,3 +1,15 @@
+## 0.11.3 (June 3, 2024)
+
+FIX:
+
+* Change Terraform version requirements syntax
+
+## 0.11.2 (June 3, 2024)
+
+FIX:
+
+* Terraform version requirements syntax
+
 ## 0.11.1 (June 3, 2024)
 
 ENHANCEMENTS:
