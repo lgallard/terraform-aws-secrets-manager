@@ -2,7 +2,7 @@
 
 FIX:
 
-* Fix required constriants
+* Fix required constraints
 * Remove Dependabot
 
 ## 0.11.3 (June 3, 2024)
