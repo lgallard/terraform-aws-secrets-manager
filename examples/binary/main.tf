@@ -1,7 +1,8 @@
 module "secrets-manager-3" {
 
-  #source = "lgallard/secrets-manager/aws"
-  source = "../../"
+  source  = "lgallard/secrets-manager/aws"
+  version = "0.11.3"
+  #source = "../../"
 
   secrets = {
     secret-binary-1 = {

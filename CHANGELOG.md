@@ -1,3 +1,9 @@
+## 0.11.5 (June 3, 2024)
+
+ENHANCEMENTS:
+
+* Add Renovate
+
 ## 0.11.4 (June 3, 2024)
 
 FIX:
