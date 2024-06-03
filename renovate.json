@@ -13,7 +13,7 @@
     {
       "matchDatasources": ["terraform-provider"],
       "enabled": true,
-      "automerge": true
+      "automerge": false
     }
   ]
 }
