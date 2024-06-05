@@ -23,6 +23,12 @@
       "matchDatasources": ["terraform-module"],
       "enabled": true,
       "automerge": false
+    },
+    {
+      "managers": ["terraform"],
+      "matchPackagePatterns": ["^hashicorp/terraform$"],
+      "enabled": true,
+      "automerge": false
     }
   ]
 }
