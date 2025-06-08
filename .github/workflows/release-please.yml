@@ -16,3 +16,57 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: .release-please-config.json
+      
+      - name: Remove v prefix from release title
+        if: ${{ steps.release_please.outputs.release_created }}
+        run: |
+          # Get the release ID
+          RELEASE_ID="${{ steps.release_please.outputs.id }}"
+          
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Release ID not found, skipping title update"
+            exit 0
+          fi
+          
+          echo "Processing release ID: $RELEASE_ID"
+          
+          # Get current release data
+          RELEASE_DATA=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}")
+          
+          # Extract current title
+          CURRENT_TITLE=$(echo "$RELEASE_DATA" | jq -r '.name')
+          
+          if [ "$CURRENT_TITLE" = "null" ] || [ -z "$CURRENT_TITLE" ]; then
+            echo "Could not retrieve release title, skipping update"
+            exit 0
+          fi
+          
+          echo "Current release title: '$CURRENT_TITLE'"
+          
+          # Remove 'v' prefix if present (case sensitive, only at the beginning, and only if followed by a digit)
+          NEW_TITLE=$(echo "$CURRENT_TITLE" | sed 's/^v\([0-9]\)/\1/')
+          
+          # Only update if the title actually changed
+          if [ "$CURRENT_TITLE" != "$NEW_TITLE" ]; then
+            echo "Updating release title from '$CURRENT_TITLE' to '$NEW_TITLE'"
+            RESPONSE=$(curl -s \
+              -X PATCH \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}" \
+              -d "{\"name\":\"$NEW_TITLE\"}")
+            
+            # Check if update was successful
+            UPDATED_TITLE=$(echo "$RESPONSE" | jq -r '.name')
+            if [ "$UPDATED_TITLE" = "$NEW_TITLE" ]; then
+              echo "Successfully updated release title to '$NEW_TITLE'"
+            else
+              echo "Failed to update release title. Response: $RESPONSE"
+              exit 1
+            fi
+          else
+            echo "Release title '$CURRENT_TITLE' does not need updating"
+          fi
