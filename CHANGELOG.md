@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.12.2](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.12.1...0.12.2) (2025-06-08)
+
+
+### Bug Fixes
+
+* Add GitHub Action step to remove "v" prefix from release titles ([#68](https://github.com/lgallard/terraform-aws-secrets-manager/issues/68)) ([5f0233d](https://github.com/lgallard/terraform-aws-secrets-manager/commit/5f0233d66849ee6b25bb47fc8ad588f69c416726))
+
 ## [0.12.1](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.12.0...0.12.1) (2025-06-08)
 
 
