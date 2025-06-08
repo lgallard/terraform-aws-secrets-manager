@@ -52,12 +52,14 @@ jobs:
           # Only update if the title actually changed
           if [ "$CURRENT_TITLE" != "$NEW_TITLE" ]; then
             echo "Updating release title from '$CURRENT_TITLE' to '$NEW_TITLE'"
+            # Use jq to safely construct JSON payload to prevent injection vulnerabilities
+            JSON_PAYLOAD=$(jq -n --arg name "$NEW_TITLE" '{name: $name}')
             RESPONSE=$(curl -s \
               -X PATCH \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}" \
-              -d "{\"name\":\"$NEW_TITLE\"}")
+              -d "$JSON_PAYLOAD")
             
             # Check if update was successful
             UPDATED_TITLE=$(echo "$RESPONSE" | jq -r '.name')
