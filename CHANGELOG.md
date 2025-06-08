@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.12.1](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.12.0...0.12.1) (2025-06-08)
+
+
+### Bug Fixes
+
+* Add tag-separator configuration to ensure Release Please creates tags without prefixes ([#65](https://github.com/lgallard/terraform-aws-secrets-manager/issues/65)) ([c37f85e](https://github.com/lgallard/terraform-aws-secrets-manager/commit/c37f85e1b2d7660c7415e67bc0c3f44a82c55fc5))
+
 ## [0.12.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.11.5...0.12.0) (2025-06-08)
 
 
