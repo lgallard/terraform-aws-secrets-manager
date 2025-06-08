@@ -4,6 +4,14 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.12.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.11.5...0.12.0) (2025-06-08)
+
+
+### Features
+
+* Add release-please support ([#62](https://github.com/lgallard/terraform-aws-secrets-manager/issues/62)) ([e84b772](https://github.com/lgallard/terraform-aws-secrets-manager/commit/e84b7729e83b762745c55da164ce85b1a759745d))
+* Add release-please workflow  ([4965e14](https://github.com/lgallard/terraform-aws-secrets-manager/commit/4965e1405029cd86a1a355827766cf6791783114))
+
 ## 0.11.4 (June 3, 2024)
 
 FIX:
