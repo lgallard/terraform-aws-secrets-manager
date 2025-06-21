@@ -1,23 +1,30 @@
 ![Terraform](https://lgallardo.com/images/terraform.jpg)
 # terraform-aws-secrets-manager
 
-Terraform module to create [Amazon Secrets Manager](https://aws.amazon.com/secrets-manager/) resources.
+Terraform module to create [Amazon Secrets Manager](https://aws.amazon.com/secrets-manager/) resources with comprehensive input validation and advanced features.
 
 AWS Secrets Manager helps you protect secrets needed to access your applications, services, and IT resources. The service enables you to easily rotate, manage, and retrieve database credentials, API keys, and other secrets throughout their lifecycle.
+
+## Features
+
+- ✅ **Input Validation**: Comprehensive validation for all variables to prevent configuration errors
+- ✅ **Type Safety**: Strongly typed variables with structured object definitions
+- ✅ **Secret Rotation**: Built-in support for automatic secret rotation with Lambda functions
+- ✅ **Cross-Region Replication**: Support for replicating secrets across AWS regions
+- ✅ **KMS Encryption**: Support for customer-managed KMS keys
+- ✅ **Resource Policies**: Attach custom IAM policies to secrets
+- ✅ **Flexible Secret Types**: Support for plain text, key/value pairs, and binary secrets
 
 ## Examples
 
 Check the [examples](/examples/) folder where you can see the complete compilation of snippets.
 
-## Usage
-
-You can create secrets for plain texts, keys/values and binary data:
+## Basic Usage
 
 ### Plain text secrets
 
-```
+```hcl
 module "secrets-manager-1" {
-
   source = "lgallard/secrets-manager/aws"
 
   secrets = {
@@ -37,16 +44,14 @@ module "secrets-manager-1" {
     Owner       = "DevOps team"
     Environment = "dev"
     Terraform   = true
-
   }
 }
 ```
 
 ### Key/Value secrets
 
-```
+```hcl
 module "secrets-manager-2" {
-
   source = "lgallard/secrets-manager/aws"
 
   secrets = {
@@ -77,23 +82,21 @@ module "secrets-manager-2" {
     Terraform   = true
   }
 }
-
 ```
 
 ### Binary secrets
 
-```
+```hcl
 module "secrets-manager-3" {
-
   source = "lgallard/secrets-manager/aws"
 
   secrets = {
     secret-binary-1 = {
       description   = "This is a binary secret"
       secret_binary = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDt4TcI58h4G0wR+GcDY+0VJR10JNvG92jEKGaKxeMaOkfsXflVGsYXbfVBBCG/n3uHtTse7baYLB6LWQAuYWL1SHJVhhTQ7pPiocFWibAvJlVo1l7qJEDu2OxKpWEleCE+p3ufNXAy7v5UFO7EOnj0Zg6R3F/MiAWbQnaEHcYzNtogyC24YBecBLrBXZNi1g0AN1hM9k+3XvWUYTf9vPv8LIWnqo7y4Q2iEGWWurf37YFl1LzX4mG/Co+Vfe5TlZSe2YPMYWlw0ZKaKvwzInRR6dPMAflo3ABzlduiIbSdp110uGqB8i2M8eGXNDxR7Ni4nnLWnT9r1cpWhXWP6pAG4Xg8+x7+PIg/pgjgJNmsURw+jPD6+hkCw2Vz16EIgkC2b7lj0V6J4LncUoRzU/1sAzCQ4tspy3SKBUinYoxbDvXleF66FHEjfparnvNwfslBx0IJjG2uRwuX6zrsNIsGF1stEjz+eyAOtFV4/wRjRcCNDZvl1ODzIvwf8pAWddE= lgallard@server1"
+      recovery_window_in_days = 7
     },
     secret-binary-2 = {
-      description             = "This is a binary secret"
       name                    = "secret-binary-2"
       description             = "Another binary secret"
       secret_binary           = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzc818NSC6oJYnNjVWoF43+IuQpqc3WyS8BWZ50uawK5lY/aObweX2YiXPv2CoVvHUM0vG7U7BDBvNi2xwsT9n9uT27lcVQsTa8iDtpyoeBhcj3vJ60Jd04UfoMP7Og6UbD+KGiaqQ0LEtMXq6d3i619t7V0UkaJ4MXh2xl5y3bV4zNzTXdSScJnvMFfjLW0pJOOqltLma3NQ9ILVdMSK2Vzxc87T+h/jp0VuUAX4Rx9DqmxEU/4JadXmow/BKy69KVwAk/AQ8jL7OwD2YAxlMKqKnOsBJQF27YjmMD240UjkmnPlxkV8+g9b2hA0iM5GL+5MWg6pPUE0BYdarCmwyuaWYhv/426LnfHTz9UVC3y9Hg5c4X4I6AdJJUmarZXqxnMe9jJiqiQ+CAuxW3m0gIGsEbUul6raG73xFuozlaXq3J+kMCVW24eG2i5fezgmtiysIf/dpcUo+YLkX+U8jdMQg9IwCY0bf8XL39kwJ7u8uWU8+7nMcS9VQ5llVVMk= lgallard@server2"
@@ -110,32 +113,122 @@ module "secrets-manager-3" {
     Terraform   = true
   }
 }
+```
 
+## Advanced Usage
+
+### Secrets with KMS Encryption
+
+```hcl
+module "secrets-manager-kms" {
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    database-credentials = {
+      description = "Database credentials encrypted with customer KMS key"
+      secret_key_value = {
+        username = "admin"
+        password = "super-secret-password"
+        host     = "db.example.com"
+        port     = "5432"
+      }
+      kms_key_id              = "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+      recovery_window_in_days = 7
+    }
+  }
+
+  tags = {
+    Environment = "production"
+    KMSEncrypted = "true"
+  }
+}
+```
+
+### Secrets with Resource Policies
+
+```hcl
+data "aws_iam_policy_document" "secret_policy" {
+  statement {
+    sid    = "AllowApplicationAccess"
+    effect = "Allow"
+    
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
+    }
+    
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = ["*"]
+  }
+}
+
+module "secrets-manager-policy" {
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    app-config = {
+      description   = "Application configuration with resource policy"
+      secret_string = jsonencode({
+        api_key = "secret-api-key"
+        config  = "production-config"
+      })
+      policy                  = data.aws_iam_policy_document.secret_policy.json
+      recovery_window_in_days = 14
+    }
+  }
+}
+```
+
+### Cross-Region Secret Replication
+
+```hcl
+module "secrets-manager-replication" {
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    global-config = {
+      description   = "Global configuration replicated across regions"
+      secret_string = "global-configuration-data"
+      
+      replica_regions = {
+        "us-west-2" = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        "eu-west-1" = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
+      }
+      
+      force_overwrite_replica_secret = true
+      recovery_window_in_days        = 7
+    }
+  }
+
+  tags = {
+    ReplicationEnabled = "true"
+    GlobalResource     = "true"
+  }
+}
 ```
 ## Secrets Rotation
 
-If you need to rotate your secrets, use `rotate_secrets` map to define them. Take into account that the lambda function must exist and it must have the right permissions to rotate the secrets in AWS Secret manager:
+If you need to rotate your secrets, use `rotate_secrets` map to define them. The lambda function must exist and have the right permissions to rotate secrets in AWS Secrets Manager:
 
-
-```
-module "secrets-manager-4" {
-
-  #source = "lgallard/secrets-manager/aws"
-  source = "../../"
+```hcl
+module "secrets-manager-rotation" {
+  source = "lgallard/secrets-manager/aws"
 
   rotate_secrets = {
-    secret-rotate-1 = {
-      description             = "This is a secret to be rotated by a lambda"
-      secret_string           = "This is an example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+    database-password = {
+      description             = "Database password rotated every 30 days"
+      secret_string           = "initial-password"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
+      automatically_after_days = 30
       recovery_window_in_days = 15
     },
-    secret-rotate-2 = {
-      description             = "This is another secret to be rotated by a lambda"
-      secret_string           = "This is another example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+    api-key = {
+      description             = "API key rotated weekly"
+      secret_string           = "initial-api-key"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
+      automatically_after_days = 7
       recovery_window_in_days = 7
-    },
+    }
   }
 
   tags = {
@@ -143,19 +236,18 @@ module "secrets-manager-4" {
     Environment = "dev"
     Terraform   = true
   }
-
 }
 
-# Lambda to rotate secrets
-# AWS temaplates available here https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas
+# Lambda function for rotation (example)
+# AWS templates available at https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas
 module "rotate_secret_lambda" {
   source  = "spring-media/lambda/aws"
   version = "5.2.0"
 
   filename         = "secrets_manager_rotation.zip"
-  function_name    = "secrets-manager-rotation"
+  function_name    = "rotate-secret"
   handler          = "secrets_manager_rotation.lambda_handler"
-  runtime          = "python3.7"
+  runtime          = "python3.9"
   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
 
   environment = {
@@ -163,10 +255,9 @@ module "rotate_secret_lambda" {
       SECRETS_MANAGER_ENDPOINT = "https://secretsmanager.us-east-1.amazonaws.com"
     }
   }
-
 }
 
-resource "aws_lambda_permission" "allow_secret_manager_call_Lambda" {
+resource "aws_lambda_permission" "allow_secret_manager_call_lambda" {
   function_name = module.rotate_secret_lambda.function_name
   statement_id  = "AllowExecutionSecretManager"
   action        = "lambda:InvokeFunction"
@@ -174,32 +265,44 @@ resource "aws_lambda_permission" "allow_secret_manager_call_Lambda" {
 }
 ```
 
-## Several secret definitions
+## Mixed Secret Definitions
 
-You can define different type of secrets (string, key/value or binary) in the same `secrets` or `rotate_secrets` map:
+You can define different types of secrets (string, key/value, or binary) in the same `secrets` or `rotate_secrets` map:
 
-```
-module "secrets-manager-5" {
-
+```hcl
+module "secrets-manager-mixed" {
   source = "lgallard/secrets-manager/aws"
 
   secrets = {
-    secret-plain = {
-      description             = "My plain text secret"
+    plain-text-secret = {
+      description             = "A plain text secret"
       recovery_window_in_days = 7
-      secret_string           = "This is an example"
-    },
-    secret-key-value = {
-      description = "This is a key/value secret"
+      secret_string           = "This is a plain text secret"
+    }
+    
+    key-value-secret = {
+      description = "A key/value secret for database credentials"
       secret_key_value = {
-        username = "user"
-        password = "topsecret"
+        username = "dbuser"
+        password = "dbpassword"
+        host     = "database.example.com"
+        port     = "5432"
+        database = "myapp"
       }
+      recovery_window_in_days = 14
       tags = {
-        app = "web"
+        Type = "database"
       }
-      recovery_window_in_days = 7
-    },
+    }
+    
+    binary-secret = {
+      description   = "SSH private key"
+      secret_binary = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC..."
+      recovery_window_in_days = 30
+      tags = {
+        Type = "ssh-key"
+      }
+    }
   }
 
   tags = {
@@ -207,54 +310,98 @@ module "secrets-manager-5" {
     Environment = "dev"
     Terraform   = true
   }
-
 }
 ```
 
-## Secrets replication
+## Input Validation Reference
 
-You can define different type of secrets (string, key/value or binary) in the same `secrets` or `rotate_secrets` map:
+This module includes comprehensive input validation to prevent configuration errors:
 
+### Secret Names
+- Must contain only alphanumeric characters, hyphens, underscores, periods, forward slashes, at signs, plus signs, and equal signs
+- Must be between 1 and 512 characters long
+- Examples: `my-secret`, `app/config`, `db_credentials`
+
+### Recovery Window
+- Must be 0 (immediate deletion) or between 7-30 days
+- Default: 30 days
+
+### Rotation Frequency  
+- Must be between 1-365 days for `automatically_after_days`
+- Default: 30 days
+
+### Version Stages
+- Only `AWSCURRENT` and `AWSPENDING` are valid
+- Example: `["AWSCURRENT"]`
+
+### KMS Key IDs
+- Must be valid KMS key ARN, alias, or key ID format
+- Examples:
+  - ARN: `arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012`
+  - Alias: `alias/my-key`
+  - Key ID: `12345678-1234-1234-1234-123456789012`
+
+### Tags
+- Keys cannot start with `aws:` (case insensitive)
+- Keys must be 1-128 characters long
+- Values must be 256 characters or less
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Invalid Secret Name Error
 ```
-module "secrets-manager-6" {
-
-  source = "lgallard/secrets-manager/aws"
-
-  secrets = {
-    secret-plain = {
-      description             = "My plain text secret"
-      recovery_window_in_days = 7
-      secret_string           = "This is an example"
-      replica_regions = {
-        us-west-2 = "arn:aws:kms:us-west-2:1234567890:key/12345678-1234-1234-1234-123456789012"
-      }
-      force_overwrite_replica_secret = true
-    },
-    secret-key-value = {
-      description = "This is a key/value secret"
-      secret_key_value = {
-        username = "user"
-        password = "topsecret"
-      }
-      replica_regions = {
-        us-west-1 = "arn:aws:kms:us-west-1:1234567890:key/12345678-1234-1234-1234-123456789012"
-      }
-      force_overwrite_replica_secret = false
-      tags = {
-        app = "web"
-      }
-      recovery_window_in_days = 7
-    },
-  }
-
-  tags = {
-    Owner       = "DevOps team"
-    Environment = "dev"
-    Terraform   = true
-  }
-
-}
+Error: Secret names must contain only alphanumeric characters, hyphens, underscores, periods, forward slashes, at signs, plus signs, and equal signs.
 ```
+**Solution**: Check your secret names for invalid characters. Only use: `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`, `/`, `@`, `+`, `=`
+
+#### Recovery Window Validation Error
+```
+Error: Recovery window must be 0 (for immediate deletion) or between 7 and 30 days.
+```
+**Solution**: Set `recovery_window_in_days` to either `0` or a value between `7` and `30`.
+
+#### KMS Key Format Error
+```
+Error: KMS key ID must be a valid KMS key ARN, alias, or key ID format.
+```
+**Solution**: Ensure your KMS key follows one of these formats:
+- `arn:aws:kms:region:account:key/key-id`
+- `alias/key-alias`
+- `key-id` (UUID format)
+
+#### Rotation Lambda Missing Error
+```
+Error: All rotate_secrets must have a valid rotation_lambda_arn specified.
+```
+**Solution**: When using `rotate_secrets`, always provide a valid `rotation_lambda_arn`. The Lambda function must exist and have proper permissions.
+
+#### Tag Validation Error
+```
+Error: Tag keys cannot start with 'aws:' (case insensitive).
+```
+**Solution**: Remove any tags that start with `aws:`, `AWS:`, or any case variation.
+
+### Performance Considerations
+
+1. **Large Numbers of Secrets**: If you have many secrets, consider splitting them across multiple module instances to improve Terraform performance.
+
+2. **Cross-Region Replication**: Be aware that replication increases costs and may impact performance. Only replicate secrets that truly need global availability.
+
+3. **Rotation Frequency**: More frequent rotations increase Lambda costs and API calls. Balance security requirements with operational costs.
+
+### Security Best Practices
+
+1. **Least Privilege Access**: Use resource policies to grant minimal required permissions.
+
+2. **Encryption**: Always use KMS encryption for sensitive secrets, preferably with customer-managed keys.
+
+3. **Monitoring**: Enable CloudTrail logging for Secrets Manager API calls to monitor access patterns.
+
+4. **Rotation**: Implement regular rotation for database credentials and API keys.
+
+5. **Version Management**: Use version stages appropriately and avoid storing multiple active versions unnecessarily.
 
 ## Version 0.5.0+ breaking changes
 Issue [#13](https://github.com/lgallard/terraform-aws-secrets-manager/issues/13) highlighted the fact that changing the secrets order will recreate the secrets (for example, adding a new secret in the top of the list o removing a secret that is not the last one). The suggested approach to tackle this issue was to use `for_each` to iterate over a map of secrets.
@@ -350,20 +497,91 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. | `number` | `30` | no |
-| <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. | `number` | `30` | no |
-| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager | `any` | `{}` | no |
-| <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager | `any` | `{}` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | Specifies a key-value map of user-defined tags that are attached to the secret. | `any` | `{}` | no |
-| <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, thus, avoiding other users to change or rotate the secrets by subsequent runs of Terraform | `bool` | `false` | no |
-| <a name="input_version_stages"></a> [version\_stages](#input\_version\_stages) | List of version stages to be handled. Kept as null for backwards compatibility. | `list(string)` | `null` | no |
+| <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. Must be between 1 and 365 days. Example: 30 | `number` | `30` | no |
+| <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. | <pre>map(object({<br>    description                    = optional(string)<br>    name                          = optional(string)<br>    name_prefix                   = optional(string)<br>    secret_string                 = optional(string)<br>    secret_key_value              = optional(map(string))<br>    secret_binary                 = optional(string)<br>    kms_key_id                    = optional(string)<br>    policy                        = optional(string)<br>    force_overwrite_replica_secret = optional(bool, false)<br>    recovery_window_in_days       = optional(number)<br>    rotation_lambda_arn           = string<br>    automatically_after_days      = optional(number)<br>    replica_regions               = optional(map(string), {})<br>    tags                          = optional(map(string), {})<br>  }))</pre> | `{}` | no |
+| <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\" } } | <pre>map(object({<br>    description                    = optional(string)<br>    name                          = optional(string)<br>    name_prefix                   = optional(string)<br>    secret_string                 = optional(string)<br>    secret_key_value              = optional(map(string))<br>    secret_binary                 = optional(string)<br>    kms_key_id                    = optional(string)<br>    policy                        = optional(string)<br>    force_overwrite_replica_secret = optional(bool, false)<br>    recovery_window_in_days       = optional(number)<br>    replica_regions               = optional(map(string), {})<br>    tags                          = optional(map(string), {})<br>  }))</pre> | `{}` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = \"prod\", Owner = \"team\" } | `map(string)` | `{}` | no |
+| <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, avoiding other users changing or rotating secrets by subsequent Terraform runs. Example: true | `bool` | `false` | no |
+| <a name="input_version_stages"></a> [version\_stages](#input\_version\_stages) | List of version stages to be handled. Valid values are 'AWSCURRENT' and 'AWSPENDING'. Kept as null for backwards compatibility. Example: [\"AWSCURRENT\"] | `list(string)` | `null` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_rotate_secret_arns"></a> [rotate\_secret\_arns](#output\_rotate\_secret\_arns) | Rotate secret arns map |
-| <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Rotate secret ids map |
-| <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Secrets arns map |
-| <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Secret ids map |
+| <a name="output_rotate_secret_arns"></a> [rotate\_secret\_arns](#output\_rotate\_secret\_arns) | Map of rotating secret names to their ARNs. Use these ARNs to grant permissions or reference rotating secrets in IAM policies and other AWS resources. |
+| <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
+| <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
+| <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
+
+## Variable Reference
+
+### secrets / rotate_secrets Object Structure
+
+Each secret in the `secrets` or `rotate_secrets` map supports the following attributes:
+
+#### Required for rotate_secrets
+- `rotation_lambda_arn` (string) - ARN of the Lambda function for secret rotation
+
+#### Optional Attributes
+- `description` (string) - Human-readable description of the secret
+- `name` (string) - Custom name for the secret (if not provided, uses map key)
+- `name_prefix` (string) - Prefix for auto-generated secret names
+- `secret_string` (string) - Plain text secret value
+- `secret_key_value` (map(string)) - Key-value pairs for structured secrets
+- `secret_binary` (string) - Binary secret data (will be base64 encoded)
+- `kms_key_id` (string) - KMS key for encryption (ARN, alias, or key ID)
+- `policy` (string) - JSON resource policy for the secret
+- `force_overwrite_replica_secret` (bool) - Force overwrite replica secrets (default: false)
+- `recovery_window_in_days` (number) - Recovery window (0, or 7-30 days)
+- `automatically_after_days` (number) - Days between automatic rotations (1-365, for rotate_secrets only)
+- `replica_regions` (map(string)) - Map of regions to KMS key IDs for replication
+- `tags` (map(string)) - Additional tags for the secret (merged with module-level tags)
+
+### Example Variable Usage
+
+```hcl
+secrets = {
+  # Plain text secret
+  "app-config" = {
+    description   = "Application configuration"
+    secret_string = "my-config-value"
+    tags = {
+      Application = "myapp"
+    }
+  }
+  
+  # Key-value secret with KMS encryption
+  "database-creds" = {
+    description = "Database credentials"
+    secret_key_value = {
+      username = "admin"
+      password = "secret123"
+      host     = "db.example.com"
+    }
+    kms_key_id              = "alias/my-secrets-key"
+    recovery_window_in_days = 7
+  }
+  
+  # Binary secret
+  "ssh-key" = {
+    description   = "SSH private key"
+    secret_binary = file("${path.module}/private_key.pem")
+    tags = {
+      Type = "ssh-key"
+    }
+  }
+}
+
+rotate_secrets = {
+  # Rotating database password
+  "db-password" = {
+    description             = "Auto-rotating database password"
+    secret_string           = "initial-password"
+    rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
+    automatically_after_days = 30
+    recovery_window_in_days = 14
+  }
+}
+```
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
