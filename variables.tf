@@ -11,28 +11,14 @@ variable "recovery_window_in_days" {
 
 # Secrets with rotation
 variable "rotate_secrets" {
-  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn."
-  type = map(object({
-    description                    = optional(string)
-    name                          = optional(string)
-    name_prefix                   = optional(string)
-    secret_string                 = optional(string)
-    secret_key_value              = optional(map(string))
-    secret_binary                 = optional(string)
-    kms_key_id                    = optional(string)
-    policy                        = optional(string)
-    force_overwrite_replica_secret = optional(bool, false)
-    recovery_window_in_days       = optional(number)
-    rotation_lambda_arn           = string
-    automatically_after_days      = optional(number)
-    replica_regions               = optional(map(string), {})
-    tags                          = optional(map(string), {})
-  }))
-  default = {}
+  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
+  type        = any
+  default     = {}
   
   validation {
     condition = alltrue([
-      for k, v in var.rotate_secrets : v.rotation_lambda_arn != null && v.rotation_lambda_arn != ""
+      for k, v in var.rotate_secrets : 
+      try(v.rotation_lambda_arn != null && v.rotation_lambda_arn != "", false)
     ])
     error_message = "All rotate_secrets must have a valid rotation_lambda_arn specified."
   }
@@ -54,7 +40,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets : 
-      v.kms_key_id == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
+      try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
@@ -62,7 +48,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets : 
-      v.automatically_after_days == null || (v.automatically_after_days >= 1 && v.automatically_after_days <= 365)
+      try(v.automatically_after_days, null) == null || (v.automatically_after_days >= 1 && v.automatically_after_days <= 365)
     ])
     error_message = "automatically_after_days must be between 1 and 365 days."
   }
@@ -71,21 +57,8 @@ variable "rotate_secrets" {
 # Regular secrets (non-rotating)
 variable "secrets" {
   description = "Map of secrets to keep in AWS Secrets Manager. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\" } }"
-  type = map(object({
-    description                    = optional(string)
-    name                          = optional(string)
-    name_prefix                   = optional(string)
-    secret_string                 = optional(string)
-    secret_key_value              = optional(map(string))
-    secret_binary                 = optional(string)
-    kms_key_id                    = optional(string)
-    policy                        = optional(string)
-    force_overwrite_replica_secret = optional(bool, false)
-    recovery_window_in_days       = optional(number)
-    replica_regions               = optional(map(string), {})
-    tags                          = optional(map(string), {})
-  }))
-  default = {}
+  type        = any
+  default     = {}
   
   validation {
     condition = alltrue([
@@ -104,7 +77,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets : 
-      v.kms_key_id == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
+      try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
@@ -143,7 +116,7 @@ variable "version_stages" {
 # Tags
 variable "tags" {
   description = "Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = \"prod\", Owner = \"team\" }"
-  type        = map(string)
+  type        = any
   default     = {}
   
   validation {
