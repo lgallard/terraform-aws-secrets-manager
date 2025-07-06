@@ -53,7 +53,7 @@ resource "aws_secretsmanager_secret" "rsm" {
   for_each                       = var.rotate_secrets
   name                           = try(each.value.name_prefix, null) == null && try(each.value.name, null) == null ? each.key : (try(each.value.name_prefix, null) == null && try(each.value.name, null) != null ? each.value.name : null)
   name_prefix                    = try(each.value.name_prefix, null) != null ? each.value.name_prefix : null
-  description                    = each.value.description
+  description                    = try(each.value.description, null)
   kms_key_id                     = try(each.value.kms_key_id, null)
   policy                         = try(each.value.policy, null)
   force_overwrite_replica_secret = try(each.value.force_overwrite_replica_secret, false)
