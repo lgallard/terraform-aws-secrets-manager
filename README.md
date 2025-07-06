@@ -1,6 +1,10 @@
 ![Terraform](https://lgallardo.com/images/terraform.jpg)
 # terraform-aws-secrets-manager
 
+[![Test](https://github.com/lgallard/terraform-aws-secrets-manager/actions/workflows/test.yml/badge.svg)](https://github.com/lgallard/terraform-aws-secrets-manager/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Terraform](https://img.shields.io/badge/terraform-%3E%3D0.13.0-blue)](https://www.terraform.io/)
+
 Terraform module to create [Amazon Secrets Manager](https://aws.amazon.com/secrets-manager/) resources with comprehensive input validation and advanced features.
 
 AWS Secrets Manager helps you protect secrets needed to access your applications, services, and IT resources. The service enables you to easily rotate, manage, and retrieve database credentials, API keys, and other secrets throughout their lifecycle.
@@ -14,6 +18,36 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 - ✅ **KMS Encryption**: Support for customer-managed KMS keys
 - ✅ **Resource Policies**: Attach custom IAM policies to secrets
 - ✅ **Flexible Secret Types**: Support for plain text, key/value pairs, and binary secrets
+- ✅ **Comprehensive Testing**: Full test suite using Terratest for reliability and regression detection
+
+## Testing
+
+This module includes a comprehensive test suite using [Terratest](https://terratest.gruntwork.io/) to ensure reliability and catch regressions early.
+
+### Quick Start
+
+```bash
+# Run all tests
+make test
+
+# Run specific test suites
+make test-basic
+make test-key-value
+make test-binary
+make test-validation
+
+# Run tests with formatting and validation
+make ci-test
+```
+
+### Test Coverage
+
+- **Basic Functionality**: Secret creation, retrieval, and metadata validation
+- **Secret Types**: Plaintext, key-value (JSON), and binary secrets
+- **Input Validation**: Boundary conditions and error handling
+- **AWS Integration**: Real AWS resources and API validation
+
+For detailed testing information, see [TESTING.md](TESTING.md).
 
 ## Examples
 
