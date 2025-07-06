@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.13.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.12.2...0.13.0) (2025-07-06)
+
+
+### Features
+
+* Improve Documentation and Input Validation ([#74](https://github.com/lgallard/terraform-aws-secrets-manager/issues/74)) ([3364440](https://github.com/lgallard/terraform-aws-secrets-manager/commit/3364440cf40969b10905fe396c226a0e96ab82ac))
+
 ## [0.12.2](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.12.1...0.12.2) (2025-06-08)
 
 
