@@ -25,7 +25,7 @@ variable "rotate_secrets" {
   
   validation {
     condition = alltrue([
-      for k, v in var.rotate_secrets : length(regexall("^[a-zA-Z0-9/_+=\\.@-]+$", k)) > 0
+      for k, v in var.rotate_secrets : length(regexall("^[a-zA-Z0-9/_+=.@-]+$", k)) > 0
     ])
     error_message = "Rotate secret names must contain only alphanumeric characters, hyphens, underscores, periods, forward slashes, at signs, plus signs, and equal signs."
   }
@@ -62,7 +62,7 @@ variable "secrets" {
   
   validation {
     condition = alltrue([
-      for k, v in var.secrets : length(regexall("^[a-zA-Z0-9/_+=\\.@-]+$", k)) > 0
+      for k, v in var.secrets : length(regexall("^[a-zA-Z0-9/_+=.@-]+$", k)) > 0
     ])
     error_message = "Secret names must contain only alphanumeric characters, hyphens, underscores, periods, forward slashes, at signs, plus signs, and equal signs."
   }
