@@ -7,7 +7,7 @@
 terraform.log
 
 # Go test files
-test/go.sum
+# Note: go.sum should be committed for reproducible builds
 
 # IDE files
 .vscode/

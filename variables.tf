@@ -135,8 +135,8 @@ variable "tags" {
 
   validation {
     condition = alltrue([
-      for k, v in var.tags : length(v) <= 256
+      for k, v in var.tags : can(tostring(v)) && length(tostring(v)) <= 256
     ])
-    error_message = "Tag values must be 256 characters or less."
+    error_message = "Tag values must be convertible to strings and 256 characters or less."
   }
 }

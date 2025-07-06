@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         terraform-version: ['1.0', '1.5', 'latest']
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
