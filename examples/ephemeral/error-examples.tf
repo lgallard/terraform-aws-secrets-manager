@@ -16,7 +16,7 @@
 #     }
 #   }
 # }
-# Error: secret_string_wo_version must be >= 1 when ephemeral is enabled.
+# Error: secret_string_wo_version is required and must be >= 1 when ephemeral is enabled.
 
 # CORRECT VERSION:
 module "correct_version" {
@@ -48,7 +48,7 @@ module "correct_version" {
 #     }
 #   }
 # }
-# Error: secret_string_wo_version must be >= 1 when ephemeral is enabled.
+# Error: secret_string_wo_version is required and must be >= 1 when ephemeral is enabled.
 
 # ERROR EXAMPLE 3: Using conflicting version parameters
 # This will fail validation

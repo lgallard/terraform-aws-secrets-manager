@@ -125,7 +125,7 @@ See `migration.tf` for a complete migration example.
 ## Common Issues and Solutions
 
 ### Issue: Version Parameter Missing
-**Error**: `secret_string_wo_version must be >= 1 when ephemeral is enabled`
+**Error**: `secret_string_wo_version is required and must be >= 1 when ephemeral is enabled`
 **Solution**: Add `secret_string_wo_version = 1` to your secret configuration
 
 ### Issue: Invalid Version Value

@@ -56,9 +56,9 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets : 
-      var.ephemeral == false || try(v.secret_string_wo_version >= 1, true)
+      var.ephemeral == false || (try(v.secret_string_wo_version, null) != null && v.secret_string_wo_version >= 1)
     ])
-    error_message = "secret_string_wo_version must be >= 1 when ephemeral is enabled for rotating secrets."
+    error_message = "secret_string_wo_version is required and must be >= 1 when ephemeral is enabled for rotating secrets. Use secret_string_wo_version for all secret types (string, key-value, and binary)."
   }
 }
 
@@ -93,18 +93,11 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets : 
-      var.ephemeral == false || try(v.secret_string_wo_version >= 1, true)
+      var.ephemeral == false || (try(v.secret_string_wo_version, null) != null && v.secret_string_wo_version >= 1)
     ])
-    error_message = "secret_string_wo_version must be >= 1 when ephemeral is enabled."
+    error_message = "secret_string_wo_version is required and must be >= 1 when ephemeral is enabled. Use secret_string_wo_version for all secret types (string, key-value, and binary)."
   }
   
-  validation {
-    condition = alltrue([
-      for k, v in var.secrets : 
-      !var.ephemeral || !(try(v.secret_string_wo_version, null) != null && try(v.secret_binary_wo_version, null) != null)
-    ])
-    error_message = "Cannot specify both secret_string_wo_version and secret_binary_wo_version for the same secret when ephemeral is enabled. Use secret_string_wo_version for all secret types."
-  }
 }
 
 variable "unmanaged" {
