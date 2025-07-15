@@ -107,10 +107,16 @@ variable "version_stages" {
   
   validation {
     condition = var.version_stages == null || alltrue([
-      for stage in var.version_stages : contains(["AWSCURRENT", "AWSPENDING"], stage)
+      for stage in coalesce(var.version_stages, []) : contains(["AWSCURRENT", "AWSPENDING"], stage)
     ])
     error_message = "Version stages must be either 'AWSCURRENT' or 'AWSPENDING'."
   }
+}
+
+variable "ephemeral" {
+  description = "Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (_wo) and are not persisted to state. Example: true"
+  type        = bool
+  default     = false
 }
 
 # Tags
