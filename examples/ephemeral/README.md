@@ -37,8 +37,7 @@ module "secrets_manager" {
 
 When using ephemeral secrets, you can control when secrets are updated by incrementing the version parameter:
 
-- `secret_string_wo_version` - for string secrets
-- `secret_binary_wo_version` - for binary secrets
+- `secret_string_wo_version` - for string secrets and binary secrets (binary secrets are stored as base64-encoded strings when ephemeral is enabled)
 
 ## Requirements
 
@@ -78,3 +77,61 @@ module "secrets_manager" {
 ```
 
 This configuration ensures that the password remains ephemeral throughout the entire workflow without being exposed in Terraform's plan or state files.
+
+## Migration from Regular to Ephemeral Secrets
+
+⚠️ **Important**: Migrating from regular to ephemeral secrets will recreate the secret resources.
+
+### Migration Steps
+
+1. **Update Configuration**: Add `ephemeral = true` and `secret_string_wo_version = 1` to each secret
+2. **Plan Changes**: Run `terraform plan` to review the changes (resources will be recreated)
+3. **Apply Changes**: Run `terraform apply` to migrate to ephemeral mode
+4. **Verify**: Check that sensitive values are no longer in the state file
+
+### Before Migration
+```hcl
+module "secrets" {
+  source = "../../"
+  
+  secrets = {
+    db_password = {
+      description = "Database password"
+      secret_string = var.db_password
+    }
+  }
+}
+```
+
+### After Migration
+```hcl
+module "secrets" {
+  source = "../../"
+  
+  ephemeral = true
+  
+  secrets = {
+    db_password = {
+      description = "Database password (ephemeral)"
+      secret_string = var.db_password
+      secret_string_wo_version = 1
+    }
+  }
+}
+```
+
+See `migration.tf` for a complete migration example.
+
+## Common Issues and Solutions
+
+### Issue: Version Parameter Missing
+**Error**: `secret_string_wo_version must be >= 1 when ephemeral is enabled`
+**Solution**: Add `secret_string_wo_version = 1` to your secret configuration
+
+### Issue: Invalid Version Value
+**Error**: Version parameter validation fails
+**Solution**: Ensure `secret_string_wo_version` is a positive integer (>= 1)
+
+### Issue: Conflicting Version Parameters
+**Error**: Cannot specify both version parameters
+**Solution**: Use only `secret_string_wo_version` for all secret types (including binary)

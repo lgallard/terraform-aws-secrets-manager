@@ -52,6 +52,14 @@ variable "rotate_secrets" {
     ])
     error_message = "automatically_after_days must be between 1 and 365 days."
   }
+  
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets : 
+      var.ephemeral == false || try(v.secret_string_wo_version >= 1, true)
+    ])
+    error_message = "secret_string_wo_version must be >= 1 when ephemeral is enabled for rotating secrets."
+  }
 }
 
 # Regular secrets (non-rotating)
@@ -80,6 +88,22 @@ variable "secrets" {
       try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
+  }
+  
+  validation {
+    condition = alltrue([
+      for k, v in var.secrets : 
+      var.ephemeral == false || try(v.secret_string_wo_version >= 1, true)
+    ])
+    error_message = "secret_string_wo_version must be >= 1 when ephemeral is enabled."
+  }
+  
+  validation {
+    condition = alltrue([
+      for k, v in var.secrets : 
+      !var.ephemeral || !(try(v.secret_string_wo_version, null) != null && try(v.secret_binary_wo_version, null) != null)
+    ])
+    error_message = "Cannot specify both secret_string_wo_version and secret_binary_wo_version for the same secret when ephemeral is enabled. Use secret_string_wo_version for all secret types."
   }
 }
 

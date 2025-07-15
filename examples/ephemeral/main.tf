@@ -48,10 +48,11 @@ module "ephemeral_secrets" {
     }
     
     # Binary secret example (SSH key)
+    # Note: Binary secrets use secret_string_wo_version (stored as base64-encoded strings)
     ssh_private_key = {
       description = "SSH private key (ephemeral)"
       secret_binary = file("${path.module}/test_key.pem")
-      secret_binary_wo_version = 1
+      secret_string_wo_version = 1
     }
   }
   
