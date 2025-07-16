@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.14.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.13.0...0.14.0) (2025-07-16)
+
+
+### Features
+
+* Add ephemeral passwords support to prevent sensitive data in state ([#81](https://github.com/lgallard/terraform-aws-secrets-manager/issues/81)) ([6ac0180](https://github.com/lgallard/terraform-aws-secrets-manager/commit/6ac01808c2dd73e35c75c66f2be6d24672dbb999))
+
 ## [0.13.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.12.2...0.13.0) (2025-07-06)
 
 
