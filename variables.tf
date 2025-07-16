@@ -56,7 +56,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets : 
-      var.ephemeral == false || (try(v.secret_string_wo_version, null) != null && v.secret_string_wo_version >= 1)
+      var.ephemeral == false || (can(v.secret_string_wo_version) && v.secret_string_wo_version >= 1)
     ])
     error_message = "secret_string_wo_version is required and must be >= 1 when ephemeral is enabled for rotating secrets. Use secret_string_wo_version for all secret types (string, key-value, and binary)."
   }
@@ -93,7 +93,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets : 
-      var.ephemeral == false || (try(v.secret_string_wo_version, null) != null && v.secret_string_wo_version >= 1)
+      var.ephemeral == false || (can(v.secret_string_wo_version) && v.secret_string_wo_version >= 1)
     ])
     error_message = "secret_string_wo_version is required and must be >= 1 when ephemeral is enabled. Use secret_string_wo_version for all secret types (string, key-value, and binary)."
   }
