@@ -210,7 +210,7 @@ resource "aws_secretsmanager_secret_replica" "this" {
 ```hcl
 # Example provider configuration
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= v0.14.0"
   
   required_providers {
     aws = {
