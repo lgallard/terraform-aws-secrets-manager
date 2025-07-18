@@ -10,11 +10,6 @@ This document outlines Terraform-specific development guidelines for the terrafo
 - **variables.tf** - Input variable definitions with validation
 - **outputs.tf** - Output value definitions  
 - **versions.tf** - Provider version constraints
-- **iam.tf** - IAM roles and policies (for secret access)
-- **notifications.tf** - SNS and notification configurations
-- **rotation.tf** - Secret rotation configurations
-- **replica.tf** - Cross-region replication configurations
-- **policy.tf** - Resource-based policy configurations
 
 ### Code Organization Principles
 - Group related resources logically in separate files
