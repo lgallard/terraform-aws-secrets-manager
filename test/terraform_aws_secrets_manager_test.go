@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	awshelper "github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/gruntwork-io/terratest/modules/terraform"
-	"github.com/gruntwork-io/terratest/modules/test-structure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -153,7 +152,10 @@ func TestTerraformAwsSecretsManagerRotation(t *testing.T) {
 	assert.Contains(t, secretArn, "arn:aws:secretsmanager")
 	
 	// Verify rotation configuration in AWS
-	sess := awshelper.NewAuthenticatedSession(t, awsRegion)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion),
+	})
+	require.NoError(t, err)
 	svc := secretsmanager.New(sess)
 	
 	input := &secretsmanager.DescribeSecretInput{
@@ -223,7 +225,6 @@ func TestTerraformAwsSecretsManagerValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			uniqueID := random.UniqueId()
 			awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 			terraformOptions := &terraform.Options{
@@ -370,7 +371,10 @@ func TestTerraformAwsSecretsManagerTags(t *testing.T) {
 	secretArns := terraform.OutputList(t, terraformOptions, "secret_arns")
 	require.Len(t, secretArns, 1)
 
-	sess := awshelper.NewAuthenticatedSession(t, awsRegion)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion),
+	})
+	require.NoError(t, err)
 	svc := secretsmanager.New(sess)
 
 	input := &secretsmanager.DescribeSecretInput{
