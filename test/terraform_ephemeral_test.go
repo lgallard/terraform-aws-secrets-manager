@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	awshelper "github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
