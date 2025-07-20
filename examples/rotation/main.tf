@@ -27,28 +27,30 @@ module "secrets-manager-4" {
 }
 
 # Lambda to rotate secrets
-# AWS temaplates available here https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas
-module "rotate_secret_lambda" {
-  source  = "spring-media/lambda/aws"
-  version = "5.2.0"
+# AWS templates available here https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas
+# Note: This example lambda module is commented out as it requires external dependencies
+# Uncomment and configure with actual lambda deployment if needed
 
-  filename         = "secrets_manager_rotation.zip"
-  function_name    = "secrets-manager-rotation"
-  handler          = "secrets_manager_rotation.lambda_handler"
-  runtime          = "python3.7"
-  source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
+# module "rotate_secret_lambda" {
+#   source  = "spring-media/lambda/aws"
+#   version = "5.2.0"
+#
+#   filename         = "secrets_manager_rotation.zip"
+#   function_name    = "secrets-manager-rotation"  
+#   handler          = "secrets_manager_rotation.lambda_handler"
+#   runtime          = "python3.7"
+#   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
 
-  environment = {
-    variables = {
-      SECRETS_MANAGER_ENDPOINT = "https://secretsmanager.us-east-1.amazonaws.com"
-    }
-  }
+#   environment = {
+#     variables = {
+#       SECRETS_MANAGER_ENDPOINT = "https://secretsmanager.us-east-1.amazonaws.com"
+#     }
+#   }
+# }
 
-}
-
-resource "aws_lambda_permission" "allow_secret_manager_call_Lambda" {
-  function_name = module.rotate_secret_lambda.function_name
-  statement_id  = "AllowExecutionSecretManager"
-  action        = "lambda:InvokeFunction"
-  principal     = "secretsmanager.amazonaws.com"
-}
+# resource "aws_lambda_permission" "allow_secret_manager_call_Lambda" {
+#   function_name = module.rotate_secret_lambda.function_name
+#   statement_id  = "AllowExecutionSecretManager"
+#   action        = "lambda:InvokeFunction"
+#   principal     = "secretsmanager.amazonaws.com"
+# }
