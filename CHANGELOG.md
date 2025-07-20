@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.15.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.14.0...0.15.0) (2025-07-20)
+
+
+### Features
+
+* Implement comprehensive testing and CI/CD infrastructure ([#97](https://github.com/lgallard/terraform-aws-secrets-manager/issues/97)) ([65b7efb](https://github.com/lgallard/terraform-aws-secrets-manager/commit/65b7efbff1e5ba52a8183ed1025c40cfe7e66f58))
+
 ## [0.14.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.13.0...0.14.0) (2025-07-16)
 
 
