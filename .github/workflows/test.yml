@@ -63,29 +63,13 @@ jobs:
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           soft_fail: false
-          format: sarif
-          out: tfsec-results.sarif
-
-      - name: Upload tfsec results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: tfsec-results.sarif
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: terraform
-          output_format: sarif
-          output_file_path: checkov-results.sarif
           soft_fail: false
-
-      - name: Upload Checkov results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: checkov-results.sarif
 
   # Linting with additional tools
   lint:
@@ -109,14 +93,8 @@ jobs:
         run: tflint --init
 
       - name: Run TFLint
-        run: tflint --recursive --format=junit > tflint-results.xml
+        run: tflint --recursive
 
-      - name: Upload TFLint results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: tflint-results
-          path: tflint-results.xml
 
   # Unit tests using Terratest
   unit-tests:
@@ -157,7 +135,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('test/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
@@ -229,7 +207,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('test/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 

@@ -19,13 +19,13 @@
 # This should pass validation
 module "validation_test_pass" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     valid_secret = {
-      description = "This should pass validation"
-      secret_string = "test-value"
+      description              = "This should pass validation"
+      secret_string            = "test-value"
       secret_string_wo_version = 1
     }
   }

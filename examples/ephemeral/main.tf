@@ -25,18 +25,18 @@ variable "api_key" {
 # Regular ephemeral secrets
 module "ephemeral_secrets" {
   source = "../../"
-  
+
   # Enable ephemeral mode
   ephemeral = true
-  
+
   secrets = {
     # String secret example
     database_password = {
-      description = "Database password (ephemeral)"
-      secret_string = var.db_password
+      description              = "Database password (ephemeral)"
+      secret_string            = var.db_password
       secret_string_wo_version = 1
     }
-    
+
     # Key-value secret example
     api_credentials = {
       description = "API credentials (ephemeral)"
@@ -46,16 +46,16 @@ module "ephemeral_secrets" {
       }
       secret_string_wo_version = 1
     }
-    
+
     # Binary secret example (SSH key)
     # Note: Binary secrets use secret_string_wo_version (stored as base64-encoded strings)
     ssh_private_key = {
-      description = "SSH private key (ephemeral)"
-      secret_binary = file("${path.module}/test_key.pem")
+      description              = "SSH private key (ephemeral)"
+      secret_binary            = file("${path.module}/test_key.pem")
       secret_string_wo_version = 1
     }
   }
-  
+
   tags = {
     Environment = "demo"
     Project     = "ephemeral-secrets"
@@ -66,20 +66,20 @@ module "ephemeral_secrets" {
 # Example with rotation and ephemeral mode
 module "ephemeral_rotate_secrets" {
   source = "../../"
-  
+
   # Enable ephemeral mode
   ephemeral = true
-  
+
   rotate_secrets = {
     rotating_db_password = {
-      description = "Rotating database password (ephemeral)"
-      secret_string = var.db_password
+      description              = "Rotating database password (ephemeral)"
+      secret_string            = var.db_password
       secret_string_wo_version = 1
-      rotation_lambda_arn = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
+      rotation_lambda_arn      = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
       automatically_after_days = 30
     }
   }
-  
+
   tags = {
     Environment = "demo"
     Project     = "ephemeral-secrets"
@@ -91,19 +91,19 @@ module "ephemeral_rotate_secrets" {
 # Example showing version increment for updates
 module "ephemeral_secrets_v2" {
   source = "../../"
-  
+
   # Enable ephemeral mode
   ephemeral = true
-  
+
   secrets = {
     # To update this secret, increment the version
     updated_secret = {
-      description = "Secret that needs updating"
-      secret_string = "new-secret-value"
-      secret_string_wo_version = 2  # Incremented from 1 to trigger update
+      description              = "Secret that needs updating"
+      secret_string            = "new-secret-value"
+      secret_string_wo_version = 2 # Incremented from 1 to trigger update
     }
   }
-  
+
   tags = {
     Environment = "demo"
     Project     = "ephemeral-secrets"

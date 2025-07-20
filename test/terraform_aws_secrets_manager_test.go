@@ -9,7 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/gruntwork-io/terratest/modules/aws"
+	awshelper "github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/random"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/gruntwork-io/terratest/modules/test-structure"
@@ -25,7 +25,7 @@ func TestTerraformAwsSecretsManagerBasic(t *testing.T) {
 	uniqueID := random.UniqueId()
 	
 	// AWS region to use for testing
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../examples/plaintext",
@@ -46,7 +46,7 @@ func TestTerraformAwsSecretsManagerBasic(t *testing.T) {
 	assert.Contains(t, secretName, "plaintext")
 	
 	// Verify the secret exists in AWS
-	secretValue := aws.GetSecretValue(t, awsRegion, secretName)
+	secretValue := awshelper.GetSecretValue(t, awsRegion, secretName)
 	assert.NotEmpty(t, secretValue)
 }
 
@@ -58,7 +58,7 @@ func TestTerraformAwsSecretsManagerEphemeral(t *testing.T) {
 	uniqueID := random.UniqueId()
 	
 	// AWS region to use for testing
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../examples/ephemeral",
@@ -88,7 +88,7 @@ func TestTerraformAwsSecretsManagerEphemeral(t *testing.T) {
 	
 	// Validate that the secret was created and has the correct value
 	secretName := terraform.Output(t, terraformOptions, "secret_name")
-	secretValue := aws.GetSecretValue(t, awsRegion, secretName)
+	secretValue := awshelper.GetSecretValue(t, awsRegion, secretName)
 	assert.NotEmpty(t, secretValue)
 }
 
@@ -97,7 +97,7 @@ func TestTerraformAwsSecretsManagerKeyValue(t *testing.T) {
 	t.Parallel()
 
 	uniqueID := random.UniqueId()
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../examples/key-value",
@@ -115,7 +115,7 @@ func TestTerraformAwsSecretsManagerKeyValue(t *testing.T) {
 
 	// Validate the key-value secret structure
 	secretName := terraform.Output(t, terraformOptions, "secret_name")
-	secretValue := aws.GetSecretValue(t, awsRegion, secretName)
+	secretValue := awshelper.GetSecretValue(t, awsRegion, secretName)
 	
 	// Parse the JSON to validate structure
 	var secretData map[string]interface{}
@@ -132,7 +132,7 @@ func TestTerraformAwsSecretsManagerRotation(t *testing.T) {
 	t.Parallel()
 
 	uniqueID := random.UniqueId()
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../examples/rotation",
@@ -153,7 +153,7 @@ func TestTerraformAwsSecretsManagerRotation(t *testing.T) {
 	assert.Contains(t, secretArn, "arn:aws:secretsmanager")
 	
 	// Verify rotation configuration in AWS
-	sess := aws.NewAuthenticatedSession(t, awsRegion)
+	sess := awshelper.NewAuthenticatedSession(t, awsRegion)
 	svc := secretsmanager.New(sess)
 	
 	input := &secretsmanager.DescribeSecretInput{
@@ -224,7 +224,7 @@ func TestTerraformAwsSecretsManagerValidation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			uniqueID := random.UniqueId()
-			awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+			awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 			terraformOptions := &terraform.Options{
 				TerraformDir: "../",
@@ -253,7 +253,7 @@ func TestTerraformAwsSecretsManagerMultipleSecrets(t *testing.T) {
 	t.Parallel()
 
 	uniqueID := random.UniqueId()
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../",
@@ -297,7 +297,7 @@ func TestTerraformAwsSecretsManagerMultipleSecrets(t *testing.T) {
 		parts := strings.Split(arn, ":")
 		if len(parts) > 6 {
 			secretName := parts[6]
-			secretValue := aws.GetSecretValue(t, awsRegion, secretName)
+			secretValue := awshelper.GetSecretValue(t, awsRegion, secretName)
 			assert.NotEmpty(t, secretValue)
 		}
 	}
@@ -308,7 +308,7 @@ func TestTerraformAwsSecretsManagerBinarySecret(t *testing.T) {
 	t.Parallel()
 
 	uniqueID := random.UniqueId()
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../examples/binary",
@@ -329,7 +329,7 @@ func TestTerraformAwsSecretsManagerBinarySecret(t *testing.T) {
 	assert.NotEmpty(t, secretName)
 	
 	// Verify the secret exists and has binary content
-	secretValue := aws.GetSecretValue(t, awsRegion, secretName)
+	secretValue := awshelper.GetSecretValue(t, awsRegion, secretName)
 	assert.NotEmpty(t, secretValue)
 }
 
@@ -338,7 +338,7 @@ func TestTerraformAwsSecretsManagerTags(t *testing.T) {
 	t.Parallel()
 
 	uniqueID := random.UniqueId()
-	awsRegion := aws.GetRandomStableRegion(t, nil, nil)
+	awsRegion := awshelper.GetRandomStableRegion(t, nil, nil)
 
 	expectedTags := map[string]string{
 		"Environment": "test",
@@ -370,7 +370,7 @@ func TestTerraformAwsSecretsManagerTags(t *testing.T) {
 	secretArns := terraform.OutputList(t, terraformOptions, "secret_arns")
 	require.Len(t, secretArns, 1)
 
-	sess := aws.NewAuthenticatedSession(t, awsRegion)
+	sess := awshelper.NewAuthenticatedSession(t, awsRegion)
 	svc := secretsmanager.New(sess)
 
 	input := &secretsmanager.DescribeSecretInput{

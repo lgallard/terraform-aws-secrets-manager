@@ -21,14 +21,14 @@
 # CORRECT VERSION:
 module "correct_version" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     good_secret = {
-      description = "This works - has required version parameter"
-      secret_string = "some-secret"
-      secret_string_wo_version = 1  # Required when ephemeral = true
+      description              = "This works - has required version parameter"
+      secret_string            = "some-secret"
+      secret_string_wo_version = 1 # Required when ephemeral = true
     }
   }
 }
@@ -76,14 +76,14 @@ module "correct_version" {
 # This configuration is valid but the write-only parameters will be ignored
 module "ignored_wo_parameters" {
   source = "../../"
-  
-  ephemeral = false  # Default value
-  
+
+  ephemeral = false # Default value
+
   secrets = {
     regular_secret = {
-      description = "Regular secret - wo_version will be ignored"
-      secret_string = "some-secret"
-      secret_string_wo_version = 1  # This will be ignored when ephemeral = false
+      description              = "Regular secret - wo_version will be ignored"
+      secret_string            = "some-secret"
+      secret_string_wo_version = 1 # This will be ignored when ephemeral = false
     }
   }
 }
@@ -93,36 +93,36 @@ module "ignored_wo_parameters" {
 # 1. Proper ephemeral configuration
 module "best_practice_ephemeral" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     # String secret
     app_password = {
-      description = "Application password (ephemeral)"
-      secret_string = var.app_password
+      description              = "Application password (ephemeral)"
+      secret_string            = var.app_password
       secret_string_wo_version = 1
     }
-    
+
     # Key-value secret
     database_config = {
       description = "Database configuration (ephemeral)"
       secret_key_value = {
         username = var.db_username
-        password = var.db_password  # Uses db_password from main.tf
+        password = var.db_password # Uses db_password from main.tf
         host     = var.db_host
       }
       secret_string_wo_version = 1
     }
-    
+
     # Binary secret (SSH key)
     ssh_key = {
-      description = "SSH private key (ephemeral)"
-      secret_binary = file("${path.module}/test_key.pem")
-      secret_string_wo_version = 1  # Note: Use string version for binary too
+      description              = "SSH private key (ephemeral)"
+      secret_binary            = file("${path.module}/test_key.pem")
+      secret_string_wo_version = 1 # Note: Use string version for binary too
     }
   }
-  
+
   tags = {
     Environment = "production"
     Security    = "ephemeral"
@@ -133,14 +133,14 @@ module "best_practice_ephemeral" {
 # 2. Version increment for updates
 module "version_increment_example" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     updated_secret = {
-      description = "Secret that needs updating"
-      secret_string = var.new_secret_value
-      secret_string_wo_version = 2  # Increment to trigger update
+      description              = "Secret that needs updating"
+      secret_string            = var.new_secret_value
+      secret_string_wo_version = 2 # Increment to trigger update
     }
   }
 }

@@ -24,27 +24,27 @@
 # AFTER: Ephemeral secrets (NOT stored in state)
 module "secrets_after" {
   source = "../../"
-  
+
   # Enable ephemeral mode
   ephemeral = true
-  
+
   secrets = {
     database_password = {
-      description = "Database password (ephemeral)"
-      secret_string = var.db_password
-      secret_string_wo_version = 1  # Required for ephemeral mode
+      description              = "Database password (ephemeral)"
+      secret_string            = var.db_password
+      secret_string_wo_version = 1 # Required for ephemeral mode
     }
-    
+
     api_credentials = {
       description = "API credentials (ephemeral)"
       secret_key_value = {
         api_key = var.api_key
         api_url = "https://api.example.com"
       }
-      secret_string_wo_version = 1  # Required for ephemeral mode
+      secret_string_wo_version = 1 # Required for ephemeral mode
     }
   }
-  
+
   tags = {
     Environment = "production"
     Migration   = "ephemeral"
