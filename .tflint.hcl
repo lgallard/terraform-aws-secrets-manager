@@ -67,9 +67,10 @@ rule "aws_secretsmanager_secret_invalid_policy" {
   enabled = true
 }
 
-rule "aws_secretsmanager_secret_version_secret_string_and_secret_binary" {
-  enabled = true
-}
+# Note: This rule was removed in newer versions of tflint-ruleset-aws
+# rule "aws_secretsmanager_secret_version_secret_string_and_secret_binary" {
+#   enabled = true
+# }
 
 # Disable specific rules that may not be relevant
 rule "terraform_module_pinned_source" {

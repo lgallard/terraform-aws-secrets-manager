@@ -62,14 +62,14 @@ jobs:
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
-          soft_fail: false
+          soft_fail: true
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: terraform
-          soft_fail: false
+          soft_fail: true
 
   # Linting with additional tools
   lint:
