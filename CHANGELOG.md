@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.16.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.15.0...0.16.0) (2025-07-21)
+
+
+### Features
+
+* implement GitHub issue [#80](https://github.com/lgallard/terraform-aws-secrets-manager/issues/80) ephemeral password support with for_each ([#102](https://github.com/lgallard/terraform-aws-secrets-manager/issues/102)) ([963eb0e](https://github.com/lgallard/terraform-aws-secrets-manager/commit/963eb0ee473edecc25c3daeac9d8d690a6d82561))
+
 ## [0.15.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.14.0...0.15.0) (2025-07-20)
 
 
