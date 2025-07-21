@@ -469,13 +469,14 @@ Successfully moved 1 object(s).
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 2.67.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.23.1 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.4.0 |
 
 ## Modules
 
@@ -498,12 +499,13 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. Must be between 1 and 365 days. Example: 30 | `number` | `30` | no |
+| <a name="input_ephemeral"></a> [ephemeral](#input\_ephemeral) | Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (\_wo) and are not persisted to state. Example: true | `bool` | `false` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
-| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. | <pre>map(object({<br>    description                    = optional(string)<br>    name                          = optional(string)<br>    name_prefix                   = optional(string)<br>    secret_string                 = optional(string)<br>    secret_key_value              = optional(map(string))<br>    secret_binary                 = optional(string)<br>    kms_key_id                    = optional(string)<br>    policy                        = optional(string)<br>    force_overwrite_replica_secret = optional(bool, false)<br>    recovery_window_in_days       = optional(number)<br>    rotation_lambda_arn           = string<br>    automatically_after_days      = optional(number)<br>    replica_regions               = optional(map(string), {})<br>    tags                          = optional(map(string), {})<br>  }))</pre> | `{}` | no |
-| <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\" } } | <pre>map(object({<br>    description                    = optional(string)<br>    name                          = optional(string)<br>    name_prefix                   = optional(string)<br>    secret_string                 = optional(string)<br>    secret_key_value              = optional(map(string))<br>    secret_binary                 = optional(string)<br>    kms_key_id                    = optional(string)<br>    policy                        = optional(string)<br>    force_overwrite_replica_secret = optional(bool, false)<br>    recovery_window_in_days       = optional(number)<br>    replica_regions               = optional(map(string), {})<br>    tags                          = optional(map(string), {})<br>  }))</pre> | `{}` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = \"prod\", Owner = \"team\" } | `map(string)` | `{}` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
+| <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = "prod", Owner = "team" } | `any` | `{}` | no |
 | <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, avoiding other users changing or rotating secrets by subsequent Terraform runs. Example: true | `bool` | `false` | no |
-| <a name="input_version_stages"></a> [version\_stages](#input\_version\_stages) | List of version stages to be handled. Valid values are 'AWSCURRENT' and 'AWSPENDING'. Kept as null for backwards compatibility. Example: [\"AWSCURRENT\"] | `list(string)` | `null` | no |
+| <a name="input_version_stages"></a> [version\_stages](#input\_version\_stages) | List of version stages to be handled. Valid values are 'AWSCURRENT' and 'AWSPENDING'. Kept as null for backwards compatibility. Example: ["AWSCURRENT"] | `list(string)` | `null` | no |
 
 ## Outputs
 
@@ -513,75 +515,4 @@ No modules.
 | <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
-
-## Variable Reference
-
-### secrets / rotate_secrets Object Structure
-
-Each secret in the `secrets` or `rotate_secrets` map supports the following attributes:
-
-#### Required for rotate_secrets
-- `rotation_lambda_arn` (string) - ARN of the Lambda function for secret rotation
-
-#### Optional Attributes
-- `description` (string) - Human-readable description of the secret
-- `name` (string) - Custom name for the secret (if not provided, uses map key)
-- `name_prefix` (string) - Prefix for auto-generated secret names
-- `secret_string` (string) - Plain text secret value
-- `secret_key_value` (map(string)) - Key-value pairs for structured secrets
-- `secret_binary` (string) - Binary secret data (will be base64 encoded)
-- `kms_key_id` (string) - KMS key for encryption (ARN, alias, or key ID)
-- `policy` (string) - JSON resource policy for the secret
-- `force_overwrite_replica_secret` (bool) - Force overwrite replica secrets (default: false)
-- `recovery_window_in_days` (number) - Recovery window (0, or 7-30 days)
-- `automatically_after_days` (number) - Days between automatic rotations (1-365, for rotate_secrets only)
-- `replica_regions` (map(string)) - Map of regions to KMS key IDs for replication
-- `tags` (map(string)) - Additional tags for the secret (merged with module-level tags)
-
-### Example Variable Usage
-
-```hcl
-secrets = {
-  # Plain text secret
-  "app-config" = {
-    description   = "Application configuration"
-    secret_string = "my-config-value"
-    tags = {
-      Application = "myapp"
-    }
-  }
-  
-  # Key-value secret with KMS encryption
-  "database-creds" = {
-    description = "Database credentials"
-    secret_key_value = {
-      username = "admin"
-      password = "secret123"
-      host     = "db.example.com"
-    }
-    kms_key_id              = "alias/my-secrets-key"
-    recovery_window_in_days = 7
-  }
-  
-  # Binary secret
-  "ssh-key" = {
-    description   = "SSH private key"
-    secret_binary = file("${path.module}/private_key.pem")
-    tags = {
-      Type = "ssh-key"
-    }
-  }
-}
-
-rotate_secrets = {
-  # Rotating database password
-  "db-password" = {
-    description             = "Auto-rotating database password"
-    secret_string           = "initial-password"
-    rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
-    automatically_after_days = 30
-    recovery_window_in_days = 14
-  }
-}
-```
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
