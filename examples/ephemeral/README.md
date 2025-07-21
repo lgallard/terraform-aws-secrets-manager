@@ -135,3 +135,45 @@ See `migration.tf` for a complete migration example.
 ### Issue: Conflicting Version Parameters
 **Error**: Cannot specify both version parameters
 **Solution**: Use only `secret_string_wo_version` for all secret types (including binary)
+
+## Advanced Patterns
+
+### GitHub Issue #80: For_each with Ephemeral Passwords
+
+See `github-issue-80-user-pattern.tf` for the **working solution** to use ephemeral `random_password` resources with `for_each` patterns.
+
+**Problem**: Module variables cannot accept ephemeral values with `for_each` due to Terraform limitations.
+
+**Solution**: Use direct AWS resources instead of the module wrapper:
+
+```hcl
+ephemeral "random_password" "db_passwords" {
+  for_each = var.db_users
+  length   = 24
+  special  = true
+}
+
+resource "aws_secretsmanager_secret_version" "db_secret_versions" {
+  for_each = var.db_users
+  secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
+  
+  secret_string_wo = jsonencode({
+    password = ephemeral.random_password.db_passwords[each.key].result
+    username = each.key
+    # ... other fields
+  })
+  
+  secret_string_wo_version = 1
+}
+```
+
+This approach provides the same security benefits while working within Terraform's architectural constraints.
+
+## Files in this Directory
+
+- `main.tf` - Basic ephemeral secrets using the module
+- `github-issue-80-user-pattern.tf` - Working solution for ephemeral + for_each patterns
+- `migration.tf` - Example migration from regular to ephemeral secrets
+- `validation-test.tf` - Test configuration for validation
+- `SOLUTION-FOR-GITHUB-ISSUE-80.md` - Detailed technical analysis
+- `EPHEMERAL-LIMITATIONS.md` - Explanation of Terraform limitations
