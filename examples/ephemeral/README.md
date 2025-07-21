@@ -140,7 +140,7 @@ See `migration.tf` for a complete migration example.
 
 ### GitHub Issue #80: For_each with Ephemeral Passwords
 
-See `github-issue-80-user-pattern.tf` for the **working solution** to use ephemeral `random_password` resources with `for_each` patterns.
+See `ephemeral-for-each-example.tf` for the **working solution** to use ephemeral `random_password` resources with `for_each` patterns.
 
 **Problem**: Module variables cannot accept ephemeral values with `for_each` due to Terraform limitations.
 
@@ -172,8 +172,8 @@ This approach provides the same security benefits while working within Terraform
 ## Files in this Directory
 
 - `main.tf` - Basic ephemeral secrets using the module
-- `github-issue-80-user-pattern.tf` - Working solution for ephemeral + for_each patterns
+- `ephemeral-for-each-example.tf` - Working solution for ephemeral + for_each patterns
 - `migration.tf` - Example migration from regular to ephemeral secrets
 - `validation-test.tf` - Test configuration for validation
-- `SOLUTION-FOR-GITHUB-ISSUE-80.md` - Detailed technical analysis
-- `EPHEMERAL-LIMITATIONS.md` - Explanation of Terraform limitations
+- `ephemeral-for-each-patterns.md` - Detailed technical analysis and solutions
+- `ephemeral-limitations.md` - Explanation of Terraform limitations
