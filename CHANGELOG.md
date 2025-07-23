@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.17.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.16.0...0.17.0) (2025-07-23)
+
+
+### Features
+
+* add claude code review workflow ([#104](https://github.com/lgallard/terraform-aws-secrets-manager/issues/104)) ([c09ad78](https://github.com/lgallard/terraform-aws-secrets-manager/commit/c09ad781cb9096beaa4ca6c526096abae34cd8d3))
+
 ## [0.16.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.15.0...0.16.0) (2025-07-21)
 
 
