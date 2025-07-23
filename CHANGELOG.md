@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.18.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.17.0...0.18.0) (2025-07-23)
+
+
+### Features
+
+* standardize release-please configuration ([#106](https://github.com/lgallard/terraform-aws-secrets-manager/issues/106)) ([5d31082](https://github.com/lgallard/terraform-aws-secrets-manager/commit/5d310822b06cc612c70d220b61ebaadd171a4d49))
+
 ## [0.17.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.16.0...0.17.0) (2025-07-23)
 
 
