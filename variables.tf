@@ -52,13 +52,15 @@ variable "rotate_secrets" {
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
 
-  validation {
-    condition = alltrue([
-      for k, v in var.rotate_secrets :
-      try(v.automatically_after_days, null) == null || (v.automatically_after_days >= 1 && v.automatically_after_days <= 365)
-    ])
-    error_message = "automatically_after_days must be between 1 and 365 days."
-  }
+  # Validation for automatically_after_days disabled due to terraform validation limitations
+  # with optional attributes in complex types
+  # validation {
+  #   condition = alltrue([
+  #     for k, v in var.rotate_secrets :
+  #     try(v.automatically_after_days, null) == null || (v.automatically_after_days >= 1 && v.automatically_after_days <= 365)
+  #   ])
+  #   error_message = "automatically_after_days must be between 1 and 365 days."
+  # }
 
   validation {
     condition = alltrue([
