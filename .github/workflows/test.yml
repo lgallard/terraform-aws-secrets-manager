@@ -7,7 +7,7 @@ on:
     branches: [ master, main ]
 
 env:
-  TERRAFORM_VERSION: 1.11.0
+  TERRAFORM_VERSION: latest
   GO_VERSION: 1.21
   ACTIONS_STEP_DEBUG: true
 
