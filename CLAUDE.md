@@ -410,17 +410,32 @@ variable "secret_kms_key_arn" {
 ## Specific Module Patterns
 
 ### Multi-Secret Support
-Handle different input formats gracefully:
+The module uses a simple map-based approach for managing multiple secrets:
 
 ```hcl
-# Support both legacy and new secret formats
-secret_configurations = flatten([
-  var.secret_configurations,
-  [for secret in try(tolist(var.secrets), []) : try(secret.config, [])],
-  [for k, secret in try(tomap(var.secrets), {}) : try(secret.config, [])],
-  [for secret in var.secret_definitions : try(secret.config, [])],
-  [for group in var.secret_groups : flatten([for secret in try(group.secrets, []) : try(secret.config, [])])]
-])
+# Simple map structure for secrets processing
+locals {
+  secrets_config = {
+    for k, v in var.secrets : k => {
+      name_prefix                    = lookup(v, "name_prefix", null)
+      name                           = lookup(v, "name", null)
+      description                    = lookup(v, "description", null)
+      kms_key_id                     = lookup(v, "kms_key_id", null)
+      # ... other configuration options
+      computed_name = lookup(v, "name", null) != null ? lookup(v, "name", null) : (lookup(v, "name_prefix", null) != null ? null : k)
+    }
+  }
+}
+
+# Direct usage with for_each
+resource "aws_secretsmanager_secret" "sm" {
+  for_each = var.secrets
+  
+  name                           = local.secrets_config[each.key].computed_name
+  name_prefix                    = local.secrets_config[each.key].computed_name_prefix
+  description                    = local.secrets_config[each.key].description
+  # ... additional configuration per secret
+}
 ```
 
 ### Using for_each for Complex Resources
