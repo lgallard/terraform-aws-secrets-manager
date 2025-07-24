@@ -59,16 +59,31 @@ func TestEphemeralVsRegularMode(t *testing.T) {
 				},
 			}
 
-			defer terraform.Destroy(t, terraformOptions)
-
 			// Deploy the infrastructure
 			terraform.InitAndApply(t, terraformOptions)
+
+			defer terraform.Destroy(t, terraformOptions)
 
 			// Get the Terraform state
 			state := terraform.Show(t, terraformOptions)
 			stateJSON, err := json.Marshal(state)
 			require.NoError(t, err)
 			stateString := string(stateJSON)
+
+			// Verify the secret exists and has the correct value in AWS BEFORE validating state
+			secretArns := terraform.OutputMap(t, terraformOptions, "secret_arns")
+			require.Len(t, secretArns, 1)
+
+			// Get the first (and only) ARN from the map
+			var secretArn string
+			for _, arn := range secretArns {
+				secretArn = arn
+				break
+			}
+
+			// Use the full ARN to validate the secret value
+			actualSecretValue := ValidateSecretValue(t, awsRegion, secretArn)
+			assert.Equal(t, secretValue, actualSecretValue)
 
 			// Validate state content based on mode
 			if tc.ephemeral {
@@ -86,15 +101,6 @@ func TestEphemeralVsRegularMode(t *testing.T) {
 				// We're not checking for presence as terraform.Show() may not include sensitive values
 				// The key difference is that ephemeral mode explicitly prevents this
 			}
-
-			// Verify the secret exists and has the correct value in AWS
-			secretArns := terraform.OutputList(t, terraformOptions, "secret_arns")
-			require.Len(t, secretArns, 1)
-
-			// Extract secret name from ARN
-			secretName := ExtractSecretNameFromArn(secretArns[0])
-			actualSecretValue := ValidateSecretValue(t, awsRegion, secretName)
-			assert.Equal(t, secretValue, actualSecretValue)
 		})
 	}
 }
@@ -174,9 +180,26 @@ func TestEphemeralSecretTypes(t *testing.T) {
 				},
 			}
 
+			terraform.InitAndApply(t, terraformOptions)
+
 			defer terraform.Destroy(t, terraformOptions)
 
-			terraform.InitAndApply(t, terraformOptions)
+			// Verify the secret exists and validate its value FIRST
+			secretArns := terraform.OutputMap(t, terraformOptions, "secret_arns")
+			require.Len(t, secretArns, 1)
+
+			// Get the first (and only) ARN from the map
+			var secretArn string
+			for _, arn := range secretArns {
+				secretArn = arn
+				break
+			}
+
+			actualValue := ValidateSecretValue(t, awsRegion, secretArn)
+
+			if tc.valueCheck != nil {
+				tc.valueCheck(t, actualValue)
+			}
 
 			// Verify no sensitive data in state
 			state := terraform.Show(t, terraformOptions)
@@ -187,17 +210,6 @@ func TestEphemeralSecretTypes(t *testing.T) {
 			// Check that sensitive values are not in state
 			if tc.expectedValue != "" {
 				ValidateNoSensitiveDataInState(t, stateString, []string{tc.expectedValue})
-			}
-
-			// Verify the secret exists and validate its value
-			secretArns := terraform.OutputList(t, terraformOptions, "secret_arns")
-			require.Len(t, secretArns, 1)
-
-			secretName := ExtractSecretNameFromArn(secretArns[0])
-			actualValue := ValidateSecretValue(t, awsRegion, secretName)
-
-			if tc.valueCheck != nil {
-				tc.valueCheck(t, actualValue)
 			}
 		})
 	}
@@ -227,16 +239,23 @@ func TestEphemeralSecretVersioning(t *testing.T) {
 		},
 	}
 
-	defer terraform.Destroy(t, terraformOptions)
-
 	// Deploy initial version
 	terraform.InitAndApply(t, terraformOptions)
 
+	defer terraform.Destroy(t, terraformOptions)
+
 	// Verify initial secret value
-	secretArns := terraform.OutputList(t, terraformOptions, "secret_arns")
+	secretArns := terraform.OutputMap(t, terraformOptions, "secret_arns")
 	require.Len(t, secretArns, 1)
-	actualSecretName := ExtractSecretNameFromArn(secretArns[0])
-	initialValue := ValidateSecretValue(t, awsRegion, actualSecretName)
+	
+	// Get the first (and only) ARN from the map
+	var secretArn string
+	for _, arn := range secretArns {
+		secretArn = arn
+		break
+	}
+	
+	initialValue := ValidateSecretValue(t, awsRegion, secretArn)
 	assert.Equal(t, "initial-value", initialValue)
 
 	// Update to version 2 with new value
@@ -253,7 +272,7 @@ func TestEphemeralSecretVersioning(t *testing.T) {
 	terraform.Apply(t, terraformOptions)
 
 	// Verify updated secret value
-	updatedValue := ValidateSecretValue(t, awsRegion, actualSecretName)
+	updatedValue := ValidateSecretValue(t, awsRegion, secretArn)
 	assert.Equal(t, "updated-value", updatedValue)
 
 	// Verify state still doesn't contain sensitive data
