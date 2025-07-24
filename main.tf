@@ -1,15 +1,63 @@
+locals {
+  # Cache lookups for regular secrets to improve performance and readability
+  secrets_config = {
+    for k, v in var.secrets : k => {
+      name_prefix                    = lookup(v, "name_prefix", null)
+      name                           = lookup(v, "name", null)
+      description                    = lookup(v, "description", null)
+      kms_key_id                     = lookup(v, "kms_key_id", null)
+      policy                         = lookup(v, "policy", null)
+      force_overwrite_replica_secret = lookup(v, "force_overwrite_replica_secret", false)
+      recovery_window_in_days        = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
+      tags                           = lookup(v, "tags", null)
+      replica_regions                = lookup(v, "replica_regions", {})
+      secret_string                  = lookup(v, "secret_string", null)
+      secret_key_value               = lookup(v, "secret_key_value", null)
+      secret_binary                  = lookup(v, "secret_binary", null)
+      secret_string_wo_version       = lookup(v, "secret_string_wo_version", null)
+      # Computed name based on priority: name > name_prefix > key
+      computed_name = v.name != null ? v.name : (v.name_prefix != null ? null : k)
+      computed_name_prefix = v.name_prefix != null ? v.name_prefix : null
+    }
+  }
+
+  # Cache lookups for rotating secrets
+  rotate_secrets_config = {
+    for k, v in var.rotate_secrets : k => {
+      name_prefix                    = lookup(v, "name_prefix", null)
+      name                           = lookup(v, "name", null)
+      description                    = lookup(v, "description", null)
+      kms_key_id                     = lookup(v, "kms_key_id", null)
+      policy                         = lookup(v, "policy", null)
+      force_overwrite_replica_secret = lookup(v, "force_overwrite_replica_secret", false)
+      recovery_window_in_days        = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
+      tags                           = lookup(v, "tags", null)
+      replica_regions                = lookup(v, "replica_regions", {})
+      secret_string                  = lookup(v, "secret_string", null)
+      secret_key_value               = lookup(v, "secret_key_value", null)
+      secret_binary                  = lookup(v, "secret_binary", null)
+      secret_string_wo_version       = lookup(v, "secret_string_wo_version", null)
+      rotation_lambda_arn            = lookup(v, "rotation_lambda_arn", null)
+      automatically_after_days       = lookup(v, "automatically_after_days", var.automatically_after_days)
+      # Computed name based on priority: name > name_prefix > key
+      computed_name = v.name != null ? v.name : (v.name_prefix != null ? null : k)
+      computed_name_prefix = v.name_prefix != null ? v.name_prefix : null
+    }
+  }
+}
+
 resource "aws_secretsmanager_secret" "sm" {
   for_each                       = var.secrets
-  name                           = lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) == null ? each.key : (lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) != null ? each.value.name : null)
-  name_prefix                    = lookup(each.value, "name_prefix", null) != null ? lookup(each.value, "name_prefix") : null
-  description                    = lookup(each.value, "description", null)
-  kms_key_id                     = lookup(each.value, "kms_key_id", null)
-  policy                         = lookup(each.value, "policy", null)
-  force_overwrite_replica_secret = lookup(each.value, "force_overwrite_replica_secret", false)
-  recovery_window_in_days        = lookup(each.value, "recovery_window_in_days", var.recovery_window_in_days)
-  tags                           = merge(var.tags, lookup(each.value, "tags", null))
+  name                           = local.secrets_config[each.key].computed_name
+  name_prefix                    = local.secrets_config[each.key].computed_name_prefix
+  description                    = local.secrets_config[each.key].description
+  kms_key_id                     = local.secrets_config[each.key].kms_key_id
+  policy                         = local.secrets_config[each.key].policy
+  force_overwrite_replica_secret = local.secrets_config[each.key].force_overwrite_replica_secret
+  recovery_window_in_days        = local.secrets_config[each.key].recovery_window_in_days
+  tags                           = merge(var.tags, local.secrets_config[each.key].tags)
   dynamic "replica" {
-    for_each = lookup(each.value, "replica_regions", {})
+    for_each = local.secrets_config[each.key].replica_regions
     content {
       region     = try(replica.value.region, replica.key)
       kms_key_id = try(replica.value.kms_key_id, null)
@@ -22,15 +70,24 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
   secret_id = aws_secretsmanager_secret.sm[each.key].arn
 
   # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string", null) : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)) : null
-  secret_binary = !var.ephemeral ? (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null) : null
+  secret_string = !var.ephemeral ? (
+    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
+    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) : null)
+  ) : null
+  secret_binary = !var.ephemeral ? (
+    local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null
+  ) : null
 
   # Write-only parameters (when ephemeral is enabled)
   # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string", null) : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null))) : null
+  secret_string_wo = var.ephemeral ? (
+    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
+    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) :
+    (local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null))
+  ) : null
 
   # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? each.value.secret_string_wo_version : null
+  secret_string_wo_version = var.ephemeral ? local.secrets_config[each.key].secret_string_wo_version : null
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.sm]
@@ -46,15 +103,24 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
   secret_id = aws_secretsmanager_secret.sm[each.key].arn
 
   # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)) : null
-  secret_binary = !var.ephemeral ? (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null) : null
+  secret_string = !var.ephemeral ? (
+    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
+    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) : null)
+  ) : null
+  secret_binary = !var.ephemeral ? (
+    local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null
+  ) : null
 
   # Write-only parameters (when ephemeral is enabled)
   # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null))) : null
+  secret_string_wo = var.ephemeral ? (
+    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
+    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) :
+    (local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null))
+  ) : null
 
   # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? each.value.secret_string_wo_version : null
+  secret_string_wo_version = var.ephemeral ? local.secrets_config[each.key].secret_string_wo_version : null
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.sm]
@@ -73,14 +139,14 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
 # Rotate secrets
 resource "aws_secretsmanager_secret" "rsm" {
   for_each                       = var.rotate_secrets
-  name                           = lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) == null ? each.key : (lookup(each.value, "name_prefix", null) == null && lookup(each.value, "name", null) != null ? each.value.name : null)
-  name_prefix                    = lookup(each.value, "name_prefix", null) != null ? lookup(each.value, "name_prefix") : null
-  description                    = lookup(each.value, "description")
-  kms_key_id                     = lookup(each.value, "kms_key_id", null)
-  policy                         = lookup(each.value, "policy", null)
-  force_overwrite_replica_secret = lookup(each.value, "force_overwrite_replica_secret", false)
-  recovery_window_in_days        = lookup(each.value, "recovery_window_in_days", var.recovery_window_in_days)
-  tags                           = merge(var.tags, lookup(each.value, "tags", null))
+  name                           = local.rotate_secrets_config[each.key].computed_name
+  name_prefix                    = local.rotate_secrets_config[each.key].computed_name_prefix
+  description                    = local.rotate_secrets_config[each.key].description
+  kms_key_id                     = local.rotate_secrets_config[each.key].kms_key_id
+  policy                         = local.rotate_secrets_config[each.key].policy
+  force_overwrite_replica_secret = local.rotate_secrets_config[each.key].force_overwrite_replica_secret
+  recovery_window_in_days        = local.rotate_secrets_config[each.key].recovery_window_in_days
+  tags                           = merge(var.tags, local.rotate_secrets_config[each.key].tags)
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {
@@ -88,15 +154,24 @@ resource "aws_secretsmanager_secret_version" "rsm-sv" {
   secret_id = aws_secretsmanager_secret.rsm[each.key].arn
 
   # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)) : null
-  secret_binary = !var.ephemeral ? (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null) : null
+  secret_string = !var.ephemeral ? (
+    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
+    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) : null)
+  ) : null
+  secret_binary = !var.ephemeral ? (
+    local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null
+  ) : null
 
   # Write-only parameters (when ephemeral is enabled)
   # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null))) : null
+  secret_string_wo = var.ephemeral ? (
+    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
+    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) :
+    (local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null))
+  ) : null
 
   # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? each.value.secret_string_wo_version : null
+  secret_string_wo_version = var.ephemeral ? local.rotate_secrets_config[each.key].secret_string_wo_version : null
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.rsm]
@@ -112,15 +187,24 @@ resource "aws_secretsmanager_secret_version" "rsm-svu" {
   secret_id = aws_secretsmanager_secret.rsm[each.key].arn
 
   # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : null)) : null
-  secret_binary = !var.ephemeral ? (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null) : null
+  secret_string = !var.ephemeral ? (
+    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
+    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) : null)
+  ) : null
+  secret_binary = !var.ephemeral ? (
+    local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null
+  ) : null
 
   # Write-only parameters (when ephemeral is enabled)
   # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (lookup(each.value, "secret_string", null) != null ? lookup(each.value, "secret_string") : (lookup(each.value, "secret_key_value", null) != null ? jsonencode(lookup(each.value, "secret_key_value", {})) : (lookup(each.value, "secret_binary", null) != null ? base64encode(lookup(each.value, "secret_binary")) : null))) : null
+  secret_string_wo = var.ephemeral ? (
+    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
+    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) :
+    (local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null))
+  ) : null
 
   # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? each.value.secret_string_wo_version : null
+  secret_string_wo_version = var.ephemeral ? local.rotate_secrets_config[each.key].secret_string_wo_version : null
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.rsm]
@@ -139,10 +223,10 @@ resource "aws_secretsmanager_secret_version" "rsm-svu" {
 resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
   for_each            = var.rotate_secrets
   secret_id           = aws_secretsmanager_secret.rsm[each.key].arn
-  rotation_lambda_arn = lookup(each.value, "rotation_lambda_arn")
+  rotation_lambda_arn = local.rotate_secrets_config[each.key].rotation_lambda_arn
 
   rotation_rules {
-    automatically_after_days = lookup(each.value, "automatically_after_days", var.automatically_after_days)
+    automatically_after_days = local.rotate_secrets_config[each.key].automatically_after_days
   }
   depends_on = [aws_secretsmanager_secret.rsm]
 
