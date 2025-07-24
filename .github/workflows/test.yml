@@ -9,6 +9,7 @@ on:
 env:
   TERRAFORM_VERSION: 1.11.0
   GO_VERSION: 1.21
+  ACTIONS_STEP_DEBUG: true
 
 jobs:
   # Validation tests - fast feedback
@@ -152,10 +153,37 @@ jobs:
         if: matrix.test-suite == 'ephemeral'
         working-directory: test
         run: |
-          go test -v -timeout 30m -run "TestEphemeral.*|TestTerraformAwsSecretsManagerEphemeral" \
+          echo "Starting ephemeral tests..."
+          echo "AWS Region: $AWS_DEFAULT_REGION"
+          echo "Go version: $(go version)"
+          echo "Terraform version: $(terraform version)"
+          
+          # Run tests sequentially to avoid state conflicts
+          go test -v -timeout 30m -p=1 -run "TestEphemeral.*" \
             -json > ephemeral-test-results.json
+          
+          exit_code=$?
+          echo "Tests completed with exit code: $exit_code"
+          
+          if [ $exit_code -ne 0 ]; then
+            echo "Test failures detected. Showing recent test output:"
+            tail -50 ephemeral-test-results.json || echo "No test results file found"
+          fi
+          
+          exit $exit_code
         env:
           AWS_DEFAULT_REGION: us-east-1
+
+      - name: Debug test artifacts
+        if: always()
+        working-directory: test
+        run: |
+          echo "=== Test directory contents ==="
+          ls -la
+          echo "=== Test result files ==="
+          ls -la *-test-results.json 2>/dev/null || echo "No test result files found"
+          echo "=== Terraform state files ==="
+          ls -la ../*.tfstate* 2>/dev/null || echo "No state files found"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
