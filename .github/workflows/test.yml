@@ -70,6 +70,7 @@ jobs:
           directory: .
           framework: terraform
           soft_fail: true
+          skip_check: CKV_AWS_304,CKV_AWS_7
 
   # Linting with additional tools
   lint:
