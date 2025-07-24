@@ -14,8 +14,8 @@ variable "db_users" {
     role = string
   }))
   default = {
-    "admin" = { role = "admin" }
-    "app"   = { role = "application" }
+    "admin"    = { role = "admin" }
+    "app"      = { role = "application" }
     "readonly" = { role = "readonly" }
   }
 }
@@ -42,7 +42,7 @@ ephemeral "random_password" "db_passwords" {
 resource "aws_kms_key" "secrets_key" {
   description             = "KMS key for ${var.app_name} secrets"
   deletion_window_in_days = 7
-  
+
   tags = {
     Name        = "${var.app_name}-secrets-key"
     Purpose     = "secrets-encryption"
@@ -63,7 +63,7 @@ resource "aws_secretsmanager_secret" "db_secrets" {
   name                    = "db/${var.app_name}/${each.key}"
   description             = "${var.app_name} database credentials for ${each.key} user"
   kms_key_id              = aws_kms_key.secrets_key.arn
-  recovery_window_in_days = 0  # Set to 7-30 for production
+  recovery_window_in_days = 0 # Set to 7-30 for production
 
   tags = {
     Environment = "production"
@@ -80,7 +80,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
   for_each = var.db_users
 
   secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
-  
+
   # Using write-only parameter with ephemeral random password
   # This ensures sensitive data is never stored in Terraform state
   secret_string_wo = jsonencode({
@@ -92,7 +92,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
     dbname   = var.app_name
     role     = each.value.role
   })
-  
+
   # Version control for ephemeral updates
   secret_string_wo_version = 1
 }

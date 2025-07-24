@@ -435,13 +435,7 @@ resource "aws_secretsmanager_secret_replica" "this" {
   secret_id = aws_secretsmanager_secret.this[each.value.secret_name].id
   region    = each.value.region
   
-  dynamic "replica" {
-    for_each = lookup(each.value, "replica_regions", {})
-    content {
-      region     = try(replica.value.region, replica.key)
-      kms_key_id = try(replica.value.kms_key_id, null)
-    }
-  }
+  kms_key_id = try(each.value.kms_key_id, null)
 }
 ```
 

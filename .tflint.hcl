@@ -33,9 +33,10 @@ rule "terraform_documented_variables" {
   enabled = true
 }
 
+# Disabled for backward compatibility - existing resource names use kebab-case
 rule "terraform_naming_convention" {
-  enabled = true
-  format  = "snake_case"
+  enabled = false
+  # format  = "snake_case"
 }
 
 rule "terraform_required_version" {

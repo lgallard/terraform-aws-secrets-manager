@@ -16,7 +16,7 @@ locals {
       secret_binary                  = lookup(v, "secret_binary", null)
       secret_string_wo_version       = lookup(v, "secret_string_wo_version", null)
       # Computed name based on priority: name > name_prefix > key
-      computed_name = v.name != null ? v.name : (v.name_prefix != null ? null : k)
+      computed_name        = v.name != null ? v.name : (v.name_prefix != null ? null : k)
       computed_name_prefix = v.name_prefix != null ? v.name_prefix : null
     }
   }
@@ -40,7 +40,7 @@ locals {
       rotation_lambda_arn            = lookup(v, "rotation_lambda_arn", null)
       automatically_after_days       = lookup(v, "automatically_after_days", var.automatically_after_days)
       # Computed name based on priority: name > name_prefix > key
-      computed_name = v.name != null ? v.name : (v.name_prefix != null ? null : k)
+      computed_name        = v.name != null ? v.name : (v.name_prefix != null ? null : k)
       computed_name_prefix = v.name_prefix != null ? v.name_prefix : null
     }
   }

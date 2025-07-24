@@ -1,3 +1,14 @@
+terraform {
+  required_version = ">= 1.11.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+  }
+}
+
 # Ephemeral Secrets Example
 # This example demonstrates how to use ephemeral secrets to prevent sensitive data from being stored in state
 
