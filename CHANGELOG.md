@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.18.1](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.18.0...0.18.1) (2025-07-24)
+
+
+### Bug Fixes
+
+* grant commit permissions to claude.yml workflow ([#109](https://github.com/lgallard/terraform-aws-secrets-manager/issues/109)) ([b4879ad](https://github.com/lgallard/terraform-aws-secrets-manager/commit/b4879ad6e80a7e91c6929c4f7ab6e0a8caa56425))
+
 ## [0.18.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.17.0...0.18.0) (2025-07-23)
 
 
