@@ -55,13 +55,20 @@ resource "aws_secretsmanager_secret" "sm" {
   policy                         = local.secrets_config[each.key].policy
   force_overwrite_replica_secret = local.secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.secrets_config[each.key].recovery_window_in_days
-  tags                           = merge(var.tags, local.secrets_config[each.key].tags)
+  tags                           = merge(var.default_tags, var.tags, local.secrets_config[each.key].tags)
+  
   dynamic "replica" {
     for_each = local.secrets_config[each.key].replica_regions
     content {
       region     = try(replica.value.region, replica.key)
       kms_key_id = try(replica.value.kms_key_id, null)
     }
+  }
+
+  lifecycle {
+    prevent_destroy       = var.prevent_destroy
+    create_before_destroy = var.create_before_destroy
+    ignore_changes        = var.ignore_changes
   }
 }
 
@@ -146,7 +153,13 @@ resource "aws_secretsmanager_secret" "rsm" {
   policy                         = local.rotate_secrets_config[each.key].policy
   force_overwrite_replica_secret = local.rotate_secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.rotate_secrets_config[each.key].recovery_window_in_days
-  tags                           = merge(var.tags, local.rotate_secrets_config[each.key].tags)
+  tags                           = merge(var.default_tags, var.tags, local.rotate_secrets_config[each.key].tags)
+
+  lifecycle {
+    prevent_destroy       = var.prevent_destroy
+    create_before_destroy = var.create_before_destroy
+    ignore_changes        = var.ignore_changes
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {

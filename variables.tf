@@ -182,3 +182,58 @@ variable "tags" {
     error_message = "Tag values must be 256 characters or less."
   }
 }
+
+variable "default_tags" {
+  description = "Default tags to apply to all resources. These are merged with resource-specific tags. Example: { Environment = \"prod\", ManagedBy = \"terraform\" }"
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.default_tags : !startswith(lower(k), "aws:")
+    ])
+    error_message = "Default tag keys cannot start with 'aws:' (case insensitive)."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.default_tags : length(k) >= 1 && length(k) <= 128
+    ])
+    error_message = "Default tag keys must be between 1 and 128 characters long."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.default_tags : length(v) <= 256
+    ])
+    error_message = "Default tag values must be 256 characters or less."
+  }
+}
+
+# Lifecycle Management
+variable "prevent_destroy" {
+  description = "Enable lifecycle prevent_destroy rule for secrets to prevent accidental deletion in production environments. Example: true"
+  type        = bool
+  default     = false
+}
+
+variable "create_before_destroy" {
+  description = "Enable lifecycle create_before_destroy rule for safer resource replacement. Example: true"
+  type        = bool
+  default     = false
+}
+
+variable "ignore_changes" {
+  description = "List of attributes to ignore when determining whether to update the secret. Useful for sensitive attributes that might change outside of Terraform. Example: [\"tags\", \"description\"]"
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition = alltrue([
+      for attr in var.ignore_changes : contains([
+        "description", "kms_key_id", "policy", "tags", "tags_all", "replica"
+      ], attr)
+    ])
+    error_message = "ignore_changes must contain only valid secret attributes: description, kms_key_id, policy, tags, tags_all, replica."
+  }
+}
