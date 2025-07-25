@@ -387,8 +387,8 @@ variable "secret_kms_key_arn" {
   default     = null
 
   validation {
-    condition     = var.secret_kms_key_arn == null ? true : can(regex("^arn:aws:kms:", var.secret_kms_key_arn))
-    error_message = "The secret_kms_key_arn must be a valid KMS key ARN."
+    condition     = var.secret_kms_key_arn == null ? true : can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", var.secret_kms_key_arn))
+    error_message = "KMS key ID must be a valid KMS key ID, key ARN, or alias ARN."
   }
 }
 ```
