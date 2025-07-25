@@ -393,6 +393,351 @@ variable "secret_kms_key_arn" {
 }
 ```
 
+## Ephemeral Password Support
+
+### Overview
+The module supports ephemeral mode to prevent sensitive data from being stored in Terraform state files. This security feature uses write-only arguments (`_wo` parameters) and requires Terraform 1.11 or later.
+
+### When to Use Ephemeral Mode
+
+**Use ephemeral mode when:**
+- Working with highly sensitive credentials (database passwords, API keys, certificates)
+- Security compliance requires that secrets never appear in state files
+- Working in environments where state files might be exposed or audited
+- Integrating with ephemeral resources (e.g., `random_password`)
+
+**Consider standard mode when:**
+- Security requirements are less stringent
+- State file security is already ensured through other means
+- Working with Terraform versions < 1.11
+- Need maximum compatibility with existing workflows
+
+### Configuration Patterns
+
+#### Standard vs Ephemeral Mode Comparison
+
+**Standard Mode (Default):**
+```hcl
+module "secrets_manager" {
+  source = "lgallard/secrets-manager/aws"
+  
+  secrets = {
+    database_password = {
+      description   = "Database password"
+      secret_string = var.db_password
+    }
+  }
+}
+```
+
+**Ephemeral Mode:**
+```hcl
+module "secrets_manager" {
+  source = "lgallard/secrets-manager/aws"
+  
+  # Enable ephemeral mode
+  ephemeral = true
+  
+  secrets = {
+    database_password = {
+      description              = "Database password (ephemeral)"
+      secret_string            = var.db_password
+      secret_string_wo_version = 1  # Required for ephemeral mode
+    }
+  }
+}
+```
+
+#### Secret Types with Ephemeral Mode
+
+**String Secrets:**
+```hcl
+secrets = {
+  api_token = {
+    description              = "API authentication token"
+    secret_string            = var.api_token
+    secret_string_wo_version = 1
+  }
+}
+```
+
+**Key-Value Secrets:**
+```hcl
+secrets = {
+  database_credentials = {
+    description = "Database connection details"
+    secret_key_value = {
+      username = "admin"
+      password = var.db_password
+      host     = "db.example.com"
+      port     = "5432"
+    }
+    secret_string_wo_version = 1
+  }
+}
+```
+
+**Binary Secrets:**
+```hcl
+secrets = {
+  ssl_certificate = {
+    description              = "SSL private key"
+    secret_binary            = file("${path.module}/private.key")
+    secret_string_wo_version = 1  # Binary secrets use string version parameter
+  }
+}
+```
+
+**Rotating Secrets:**
+```hcl
+rotate_secrets = {
+  rotating_password = {
+    description              = "Auto-rotating database password"
+    secret_string            = var.initial_password
+    secret_string_wo_version = 1
+    rotation_lambda_arn      = var.rotation_lambda_arn
+    automatically_after_days = 30
+  }
+}
+```
+
+### Version Management
+
+#### Version Control for Updates
+Ephemeral secrets use version parameters to control when updates occur:
+
+```hcl
+# Initial deployment
+secrets = {
+  api_key = {
+    description              = "API key"
+    secret_string            = var.api_key
+    secret_string_wo_version = 1
+  }
+}
+
+# To update the secret, increment the version
+secrets = {
+  api_key = {
+    description              = "API key"
+    secret_string            = var.new_api_key
+    secret_string_wo_version = 2  # Incremented to trigger update
+  }
+}
+```
+
+#### Version Requirements
+- `secret_string_wo_version` must be >= 1
+- Version increments trigger secret updates
+- All secret types (string, key-value, binary) use `secret_string_wo_version`
+
+### Migration from Standard to Ephemeral Mode
+
+#### Migration Process
+⚠️ **Important**: Migration will recreate secret resources and may cause brief service interruption.
+
+**Before Migration:**
+```hcl
+module "secrets" {
+  source = "lgallard/secrets-manager/aws"
+  
+  secrets = {
+    database_password = {
+      description   = "Database password"
+      secret_string = var.db_password
+    }
+  }
+}
+```
+
+**After Migration:**
+```hcl
+module "secrets" {
+  source = "lgallard/secrets-manager/aws"
+  
+  ephemeral = true  # Enable ephemeral mode
+  
+  secrets = {
+    database_password = {
+      description              = "Database password (ephemeral)"
+      secret_string            = var.db_password
+      secret_string_wo_version = 1  # Add version parameter
+    }
+  }
+}
+```
+
+#### Migration Steps
+1. **Plan**: Run `terraform plan` to review changes (resources will be recreated)
+2. **Backup**: Ensure secret values are backed up outside Terraform
+3. **Apply**: Run `terraform apply` to migrate to ephemeral mode
+4. **Verify**: Confirm sensitive values are not in state file
+
+### Validation Requirements
+
+#### Required Parameters
+When `ephemeral = true`:
+- `secret_string_wo_version` is required for all secrets
+- Version value must be >= 1
+- Only one version parameter type per secret
+
+#### Variable Validation Examples
+```hcl
+variable "secrets" {
+  type = map(object({
+    description              = string
+    secret_string            = optional(string)
+    secret_string_wo_version = optional(number)
+    # ... other fields
+  }))
+  
+  validation {
+    condition = alltrue([
+      for k, v in var.secrets :
+      var.ephemeral == false || (can(v.secret_string_wo_version) && try(v.secret_string_wo_version >= 1, false))
+    ])
+    error_message = "secret_string_wo_version is required and must be >= 1 when ephemeral is enabled."
+  }
+}
+```
+
+### Security Considerations
+
+#### State File Protection
+- **Ephemeral mode**: Sensitive values never appear in Terraform state
+- **Write-only parameters**: Use `secret_string_wo` internally to prevent state persistence
+- **Version control**: Updates controlled through version parameters, not value changes
+
+#### Security Best Practices
+```hcl
+# Use sensitive variables for input
+variable "database_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true  # Mark as sensitive
+}
+
+# Enable ephemeral mode for sensitive secrets
+module "secrets" {
+  source = "lgallard/secrets-manager/aws"
+  
+  ephemeral = true
+  
+  secrets = {
+    db_password = {
+      description              = "Database password (ephemeral)"
+      secret_string            = var.database_password
+      secret_string_wo_version = 1
+      kms_key_id              = aws_kms_key.secrets_key.arn  # Use KMS encryption
+    }
+  }
+  
+  tags = {
+    Security    = "high"
+    Compliance  = "required"
+  }
+}
+```
+
+#### State File Analysis
+Test configurations should validate state security:
+
+```go
+// Validate that sensitive values are NOT in Terraform state
+ValidateNoSensitiveDataInState(t, stateString, []string{
+    "supersecretpassword",
+    "sensitive-api-key",
+})
+```
+
+### Advanced Usage Patterns
+
+#### Integration with Ephemeral Resources
+```hcl
+# Generate ephemeral password
+ephemeral "random_password" "db_password" {
+  length  = 16
+  special = true
+}
+
+# Use ephemeral password in secret
+module "secrets_manager" {
+  source = "lgallard/secrets-manager/aws"
+  
+  ephemeral = true
+  
+  secrets = {
+    database_password = {
+      description              = "Random database password (ephemeral)"
+      secret_string            = ephemeral.random_password.db_password.result
+      secret_string_wo_version = 1
+    }
+  }
+}
+```
+
+#### Limitations with for_each
+Due to Terraform architectural limitations, ephemeral values cannot be used with `for_each` in module calls. Use direct AWS resources instead:
+
+```hcl
+# Generate multiple ephemeral passwords
+ephemeral "random_password" "db_passwords" {
+  for_each = var.db_users
+  length   = 24
+  special  = true
+}
+
+# Create secrets directly (not through module)
+resource "aws_secretsmanager_secret_version" "db_secret_versions" {
+  for_each = var.db_users
+  
+  secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
+  
+  secret_string_wo = jsonencode({
+    username = each.key
+    password = ephemeral.random_password.db_passwords[each.key].result
+  })
+  
+  secret_string_wo_version = 1
+}
+```
+
+### Testing Ephemeral Functionality
+
+#### Test Structure
+```bash
+# Run ephemeral-specific tests
+cd test
+go test -v -timeout 30m -run "TestEphemeral.*"
+```
+
+#### Test Categories
+- `TestEphemeralVsRegularMode` - Compares modes for security compliance
+- `TestEphemeralSecretTypes` - Validates all secret types work in ephemeral mode
+- `TestEphemeralSecretVersioning` - Tests version-controlled updates
+- `TestEphemeralRotatingSecrets` - Validates rotation with ephemeral mode
+
+#### Test Helper Functions
+```go
+// Create ephemeral secret configuration
+CreateEphemeralSecretConfig(secretName, secretValue string, version int) map[string]interface{}
+
+// Validate state security
+ValidateNoSensitiveDataInState(t *testing.T, stateContent string, sensitiveValues []string)
+```
+
+### Requirements and Compatibility
+
+#### Version Requirements
+- **Terraform**: >= 1.11 (for ephemeral resource support)
+- **AWS Provider**: >= 2.67.0
+- **Module**: Latest version with ephemeral support
+
+#### Backward Compatibility
+- Default behavior (`ephemeral = false`) remains unchanged
+- Existing configurations continue to work without modification
+- Migration is opt-in and explicit
+
 ## Module Development Guidelines
 
 ### Backward Compatibility
