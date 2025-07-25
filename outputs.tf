@@ -103,3 +103,31 @@ output "secrets_by_name" {
     { for k, v in aws_secretsmanager_secret.rsm : v.name => v.arn }
   )
 }
+
+# Data source outputs for existing secrets
+output "existing_secrets" {
+  description = "Map of existing secrets referenced as data sources with their complete attributes."
+  value = { for k, v in data.aws_secretsmanager_secret.existing : k => {
+    arn                     = v.arn
+    id                      = v.id
+    name                    = v.name
+    description             = v.description
+    kms_key_id             = v.kms_key_id
+    policy                  = v.policy
+    recovery_window_in_days = v.recovery_window_in_days
+    tags                    = v.tags
+    replica                 = v.replica
+  }}
+}
+
+output "existing_secret_versions" {
+  description = "Map of existing secret versions with their current values and metadata."
+  value = { for k, v in data.aws_secretsmanager_secret_version.existing : k => {
+    arn            = v.arn
+    id             = v.id
+    secret_id      = v.secret_id
+    version_id     = v.version_id
+    version_stages = v.version_stages
+    # Note: secret_string and secret_binary are sensitive and not exposed
+  }}
+}
