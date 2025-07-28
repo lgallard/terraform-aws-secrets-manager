@@ -231,9 +231,24 @@ variable "ignore_changes" {
   validation {
     condition = alltrue([
       for attr in var.ignore_changes : contains([
-        "description", "kms_key_id", "policy", "tags", "tags_all", "replica"
+        "description", "kms_key_id", "policy", "tags", "replica"
       ], attr)
     ])
-    error_message = "ignore_changes must contain only valid secret attributes: description, kms_key_id, policy, tags, tags_all, replica."
+    error_message = "ignore_changes must contain only valid secret attributes: description, kms_key_id, policy, tags, replica."
+  }
+}
+
+# Data sources for existing secrets
+variable "existing_secrets" {
+  description = "Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing_secret = \"arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret\" }"
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.existing_secrets : 
+      can(regex("^(arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[a-zA-Z0-9/_+=.@-]+|[a-zA-Z0-9/_+=.@-]+)$", v))
+    ])
+    error_message = "Existing secret values must be valid secret names or ARNs."
   }
 }

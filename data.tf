@@ -1,20 +1,6 @@
 # Data sources for existing secrets
 # These can be used to reference secrets that exist outside of this module
 
-variable "existing_secrets" {
-  description = "Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing_secret = \"arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret\" }"
-  type        = map(string)
-  default     = {}
-
-  validation {
-    condition = alltrue([
-      for k, v in var.existing_secrets : 
-      can(regex("^(arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[a-zA-Z0-9/_+=.@-]+|[a-zA-Z0-9/_+=.@-]+)$", v))
-    ])
-    error_message = "Existing secret values must be valid secret names or ARNs."
-  }
-}
-
 data "aws_secretsmanager_secret" "existing" {
   for_each = var.existing_secrets
   

@@ -44,6 +44,34 @@ locals {
       computed_name_prefix = lookup(v, "name_prefix", null)
     }
   }
+
+  # Helper function to compute secret values based on ephemeral mode - reduces code duplication
+  compute_secret_values = {
+    for config_name, config_map in {
+      "secrets" = local.secrets_config,
+      "rotate_secrets" = local.rotate_secrets_config
+    } : config_name => {
+      for k, v in config_map : k => {
+        # Regular parameters (when ephemeral is disabled)
+        secret_string = !var.ephemeral ? (
+          v.secret_string != null ? v.secret_string :
+          (v.secret_key_value != null ? jsonencode(v.secret_key_value) : null)
+        ) : null
+        secret_binary = !var.ephemeral ? (
+          v.secret_binary != null ? base64encode(v.secret_binary) : null
+        ) : null
+        
+        # Write-only parameters (when ephemeral is enabled)
+        secret_string_wo = var.ephemeral ? (
+          v.secret_string != null ? v.secret_string :
+          (v.secret_key_value != null ? jsonencode(v.secret_key_value) :
+          (v.secret_binary != null ? base64encode(v.secret_binary) : null))
+        ) : null
+        
+        secret_string_wo_version = var.ephemeral ? v.secret_string_wo_version : null
+      }
+    }
+  }
 }
 
 resource "aws_secretsmanager_secret" "sm" {
@@ -76,25 +104,11 @@ resource "aws_secretsmanager_secret_version" "sm-sv" {
   for_each  = { for k, v in var.secrets : k => v if !var.unmanaged }
   secret_id = aws_secretsmanager_secret.sm[each.key].arn
 
-  # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (
-    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
-    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) : null)
-  ) : null
-  secret_binary = !var.ephemeral ? (
-    local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null
-  ) : null
-
-  # Write-only parameters (when ephemeral is enabled)
-  # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (
-    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
-    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) :
-    (local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null))
-  ) : null
-
-  # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? local.secrets_config[each.key].secret_string_wo_version : null
+  # Use computed values from locals to eliminate code duplication
+  secret_string            = local.compute_secret_values["secrets"][each.key].secret_string
+  secret_binary            = local.compute_secret_values["secrets"][each.key].secret_binary
+  secret_string_wo         = local.compute_secret_values["secrets"][each.key].secret_string_wo
+  secret_string_wo_version = local.compute_secret_values["secrets"][each.key].secret_string_wo_version
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.sm]
@@ -109,25 +123,11 @@ resource "aws_secretsmanager_secret_version" "sm-svu" {
   for_each  = { for k, v in var.secrets : k => v if var.unmanaged }
   secret_id = aws_secretsmanager_secret.sm[each.key].arn
 
-  # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (
-    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
-    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) : null)
-  ) : null
-  secret_binary = !var.ephemeral ? (
-    local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null
-  ) : null
-
-  # Write-only parameters (when ephemeral is enabled)
-  # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (
-    local.secrets_config[each.key].secret_string != null ? local.secrets_config[each.key].secret_string :
-    (local.secrets_config[each.key].secret_key_value != null ? jsonencode(local.secrets_config[each.key].secret_key_value) :
-    (local.secrets_config[each.key].secret_binary != null ? base64encode(local.secrets_config[each.key].secret_binary) : null))
-  ) : null
-
-  # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? local.secrets_config[each.key].secret_string_wo_version : null
+  # Use computed values from locals to eliminate code duplication
+  secret_string            = local.compute_secret_values["secrets"][each.key].secret_string
+  secret_binary            = local.compute_secret_values["secrets"][each.key].secret_binary
+  secret_string_wo         = local.compute_secret_values["secrets"][each.key].secret_string_wo
+  secret_string_wo_version = local.compute_secret_values["secrets"][each.key].secret_string_wo_version
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.sm]
@@ -166,25 +166,11 @@ resource "aws_secretsmanager_secret_version" "rsm-sv" {
   for_each  = { for k, v in var.rotate_secrets : k => v if !var.unmanaged }
   secret_id = aws_secretsmanager_secret.rsm[each.key].arn
 
-  # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (
-    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
-    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) : null)
-  ) : null
-  secret_binary = !var.ephemeral ? (
-    local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null
-  ) : null
-
-  # Write-only parameters (when ephemeral is enabled)
-  # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (
-    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
-    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) :
-    (local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null))
-  ) : null
-
-  # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? local.rotate_secrets_config[each.key].secret_string_wo_version : null
+  # Use computed values from locals to eliminate code duplication
+  secret_string            = local.compute_secret_values["rotate_secrets"][each.key].secret_string
+  secret_binary            = local.compute_secret_values["rotate_secrets"][each.key].secret_binary
+  secret_string_wo         = local.compute_secret_values["rotate_secrets"][each.key].secret_string_wo
+  secret_string_wo_version = local.compute_secret_values["rotate_secrets"][each.key].secret_string_wo_version
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.rsm]
@@ -199,25 +185,11 @@ resource "aws_secretsmanager_secret_version" "rsm-svu" {
   for_each  = { for k, v in var.rotate_secrets : k => v if var.unmanaged }
   secret_id = aws_secretsmanager_secret.rsm[each.key].arn
 
-  # Regular parameters (when ephemeral is disabled)
-  secret_string = !var.ephemeral ? (
-    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
-    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) : null)
-  ) : null
-  secret_binary = !var.ephemeral ? (
-    local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null
-  ) : null
-
-  # Write-only parameters (when ephemeral is enabled)
-  # Note: Binary secrets are stored as base64-encoded strings when ephemeral is enabled
-  secret_string_wo = var.ephemeral ? (
-    local.rotate_secrets_config[each.key].secret_string != null ? local.rotate_secrets_config[each.key].secret_string :
-    (local.rotate_secrets_config[each.key].secret_key_value != null ? jsonencode(local.rotate_secrets_config[each.key].secret_key_value) :
-    (local.rotate_secrets_config[each.key].secret_binary != null ? base64encode(local.rotate_secrets_config[each.key].secret_binary) : null))
-  ) : null
-
-  # Version parameters for write-only arguments
-  secret_string_wo_version = var.ephemeral ? local.rotate_secrets_config[each.key].secret_string_wo_version : null
+  # Use computed values from locals to eliminate code duplication
+  secret_string            = local.compute_secret_values["rotate_secrets"][each.key].secret_string
+  secret_binary            = local.compute_secret_values["rotate_secrets"][each.key].secret_binary
+  secret_string_wo         = local.compute_secret_values["rotate_secrets"][each.key].secret_string_wo
+  secret_string_wo_version = local.compute_secret_values["rotate_secrets"][each.key].secret_string_wo_version
 
   version_stages = var.version_stages
   depends_on     = [aws_secretsmanager_secret.rsm]
