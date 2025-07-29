@@ -92,12 +92,6 @@ resource "aws_secretsmanager_secret" "sm" {
       kms_key_id = try(replica.value.kms_key_id, null)
     }
   }
-
-  lifecycle {
-    prevent_destroy       = var.prevent_destroy
-    create_before_destroy = var.create_before_destroy
-    ignore_changes        = var.ignore_changes
-  }
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
@@ -154,12 +148,6 @@ resource "aws_secretsmanager_secret" "rsm" {
   force_overwrite_replica_secret = local.rotate_secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.rotate_secrets_config[each.key].recovery_window_in_days
   tags                           = merge(var.default_tags, var.tags, local.rotate_secrets_config[each.key].tags)
-
-  lifecycle {
-    prevent_destroy       = var.prevent_destroy
-    create_before_destroy = var.create_before_destroy
-    ignore_changes        = var.ignore_changes
-  }
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {

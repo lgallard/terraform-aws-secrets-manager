@@ -206,6 +206,38 @@ module "secrets-manager-replication" {
   }
 }
 ```
+
+### Lifecycle Configuration
+
+If you need to configure lifecycle rules for your secrets (such as `prevent_destroy`, `create_before_destroy`, or `ignore_changes`), you should configure them at the module level rather than through module variables:
+
+```hcl
+module "secrets-manager-lifecycle" {
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    critical-database-password = {
+      description   = "Critical database password - protected from accidental deletion"
+      secret_string = "super-secret-password"
+    }
+  }
+
+  tags = {
+    Environment = "production"
+    Critical    = "true"
+  }
+
+  # Configure lifecycle rules at the module level
+  lifecycle {
+    prevent_destroy = true
+    create_before_destroy = true
+    ignore_changes = ["tags"]
+  }
+}
+```
+
+This approach follows Terraform best practices and ensures compliance with Terraform's requirement that lifecycle blocks only contain literal values.
+
 ## Secrets Rotation
 
 If you need to rotate your secrets, use `rotate_secrets` map to define them. The lambda function must exist and have the right permissions to rotate secrets in AWS Secrets Manager:

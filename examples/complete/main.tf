@@ -4,11 +4,6 @@
 module "secrets_manager" {
   source = "../../"
 
-  # Lifecycle management for production environments
-  prevent_destroy       = true
-  create_before_destroy = true
-  ignore_changes        = ["tags", "description"]
-
   # Enhanced tagging strategy
   default_tags = {
     Environment  = "production"

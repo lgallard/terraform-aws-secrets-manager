@@ -210,33 +210,6 @@ variable "default_tags" {
   }
 }
 
-# Lifecycle Management
-variable "prevent_destroy" {
-  description = "Enable lifecycle prevent_destroy rule for secrets to prevent accidental deletion in production environments. Example: true"
-  type        = bool
-  default     = false
-}
-
-variable "create_before_destroy" {
-  description = "Enable lifecycle create_before_destroy rule for safer resource replacement. Example: true"
-  type        = bool
-  default     = false
-}
-
-variable "ignore_changes" {
-  description = "List of attributes to ignore when determining whether to update the secret. Useful for sensitive attributes that might change outside of Terraform. Example: [\"tags\", \"description\"]"
-  type        = list(string)
-  default     = []
-
-  validation {
-    condition = alltrue([
-      for attr in var.ignore_changes : contains([
-        "description", "kms_key_id", "policy", "tags", "replica"
-      ], attr)
-    ])
-    error_message = "ignore_changes must contain only valid secret attributes: description, kms_key_id, policy, tags, replica."
-  }
-}
 
 # Data sources for existing secrets
 variable "existing_secrets" {
