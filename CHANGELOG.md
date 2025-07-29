@@ -4,6 +4,13 @@ ENHANCEMENTS:
 
 * Add Renovate
 
+## [0.19.1](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.19.0...0.19.1) (2025-07-29)
+
+
+### Bug Fixes
+
+* remove variable usage from lifecycle blocks ([edbc5a6](https://github.com/lgallard/terraform-aws-secrets-manager/commit/edbc5a680bfb9b94d6669379e69eff70b5c38e8b)), closes [#122](https://github.com/lgallard/terraform-aws-secrets-manager/issues/122)
+
 ## [0.19.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.18.2...0.19.0) (2025-07-28)
 
 
