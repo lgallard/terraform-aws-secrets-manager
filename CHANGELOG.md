@@ -1,15 +1,15 @@
-## 0.11.5 (June 3, 2024)
-
-ENHANCEMENTS:
-
-* Add Renovate
-
 ## [0.20.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.19.1...0.20.0) (2025-07-30)
 
 
 ### Features
 
 * replicate security-hardened Claude Code Review workflow with PR focus ([#126](https://github.com/lgallard/terraform-aws-secrets-manager/issues/126)) ([a3e9803](https://github.com/lgallard/terraform-aws-secrets-manager/commit/a3e98038376bd2f32956ababb7c7a3e13255a645))
+
+## 0.11.5 (June 3, 2024)
+
+ENHANCEMENTS:
+
+* Add Renovate
 
 ## [0.19.1](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.19.0...0.19.1) (2025-07-29)
 
