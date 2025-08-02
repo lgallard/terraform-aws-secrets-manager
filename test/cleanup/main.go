@@ -117,8 +117,8 @@ func main() {
 					}
 				}
 				
-				// Add time bounds validation to prevent negative durations or clock skew issues
-				if !shouldDelete && timeSinceCreation >= 0 {
+				// Add time bounds validation to prevent negative durations or clock skew issues  
+				if !shouldDelete && timeSinceCreation >= 0 && timeSinceCreation < 6*time.Hour {
 					// Check for names with random suffix patterns (like Terratest generates)
 					if len(secretName) > 10 && strings.Contains(secretName, "-") {
 						parts := strings.Split(secretName, "-")

@@ -157,12 +157,24 @@ func CleanupAllTestSecrets(t *testing.T, region string) {
 	require.NoError(t, err)
 	svc := secretsmanager.New(sess)
 
-	// List all secrets
+	// List all secrets with pagination support
+	var allSecrets []*secretsmanager.SecretListEntry
 	input := &secretsmanager.ListSecretsInput{}
-	result, err := svc.ListSecrets(input)
-	if err != nil {
-		t.Logf("Warning: Failed to list secrets for aggressive cleanup: %v", err)
-		return
+	
+	for {
+		result, err := svc.ListSecrets(input)
+		if err != nil {
+			t.Logf("Warning: Failed to list secrets for aggressive cleanup: %v", err)
+			return
+		}
+		
+		allSecrets = append(allSecrets, result.SecretList...)
+		
+		// Check if there are more results
+		if result.NextToken == nil {
+			break
+		}
+		input.NextToken = result.NextToken
 	}
 
 	testPrefixes := []string{
@@ -173,8 +185,9 @@ func CleanupAllTestSecrets(t *testing.T, region string) {
 		"rotation-", "binary-", "multiple-secrets-", "basic-", "complete-", "example-",
 	}
 
+	t.Logf("Found %d total secrets to evaluate for cleanup", len(allSecrets))
 	deletedCount := 0
-	for _, secret := range result.SecretList {
+	for _, secret := range allSecrets {
 		if secret.Name == nil {
 			continue
 		}
@@ -190,7 +203,7 @@ func CleanupAllTestSecrets(t *testing.T, region string) {
 			}
 		}
 
-		// Check for recent test-pattern secrets (created in last 4 hours)
+		// Check for recent test-pattern secrets (created in last 6 hours - standardized with cleanup/main.go)
 		if !shouldDelete && secret.CreatedDate != nil {
 			// Validate time calculation is safe
 			createdDate := *secret.CreatedDate
@@ -200,7 +213,7 @@ func CleanupAllTestSecrets(t *testing.T, region string) {
 			
 			timeSinceCreation := time.Since(createdDate)
 			// Add bounds checking to prevent negative durations or clock skew issues
-			if timeSinceCreation >= 0 && timeSinceCreation < 4*time.Hour {
+			if timeSinceCreation >= 0 && timeSinceCreation < 6*time.Hour {
 				testPatterns := []string{"test-", "terratest-", "ephemeral-", "validation-"}
 				secretNameLower := strings.ToLower(secretName)
 				for _, pattern := range testPatterns {
