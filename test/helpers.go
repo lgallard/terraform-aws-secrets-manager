@@ -148,6 +148,82 @@ func CleanupTestSecrets(t *testing.T, region string, namePrefix string) {
 	}
 }
 
+// CleanupAllTestSecrets performs aggressive cleanup of test-related secrets
+// This should be called at the beginning of test suites to clean up any orphaned resources
+func CleanupAllTestSecrets(t *testing.T, region string) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	require.NoError(t, err)
+	svc := secretsmanager.New(sess)
+
+	// List all secrets
+	input := &secretsmanager.ListSecretsInput{}
+	result, err := svc.ListSecrets(input)
+	if err != nil {
+		t.Logf("Warning: Failed to list secrets for aggressive cleanup: %v", err)
+		return
+	}
+
+	testPrefixes := []string{
+		"plan-test-", "ephemeral-vs-regular-", "ephemeral-types-", "ephemeral-versioning-",
+		"ephemeral-rotation-", "test-secret-", "ephemeral-secret-", "tagged-secret-",
+		"regular-secret-", "ephemeral-plaintext-", "ephemeral-kv-", "ephemeral-binary-",
+		"versioned-secret-", "ephemeral-rotating-", "plaintext-", "keyvalue-",
+		"rotation-", "binary-", "multiple-secrets-", "basic-", "complete-", "example-",
+	}
+
+	deletedCount := 0
+	for _, secret := range result.SecretList {
+		if secret.Name == nil {
+			continue
+		}
+
+		secretName := *secret.Name
+		shouldDelete := false
+
+		// Check prefixes
+		for _, prefix := range testPrefixes {
+			if strings.HasPrefix(secretName, prefix) {
+				shouldDelete = true
+				break
+			}
+		}
+
+		// Check for recent test-pattern secrets (created in last 4 hours)
+		if !shouldDelete && secret.CreatedDate != nil {
+			timeSinceCreation := time.Since(*secret.CreatedDate)
+			if timeSinceCreation < 4*time.Hour {
+				testPatterns := []string{"test-", "terratest-", "ephemeral-", "validation-"}
+				secretNameLower := strings.ToLower(secretName)
+				for _, pattern := range testPatterns {
+					if strings.Contains(secretNameLower, pattern) {
+						shouldDelete = true
+						break
+					}
+				}
+			}
+		}
+
+		if shouldDelete {
+			t.Logf("Cleaning up orphaned test secret: %s", secretName)
+			_, err := svc.DeleteSecret(&secretsmanager.DeleteSecretInput{
+				SecretId:                   &secretName,
+				ForceDeleteWithoutRecovery: aws.Bool(true),
+			})
+			if err != nil {
+				t.Logf("Warning: Failed to delete orphaned secret %s: %v", secretName, err)
+			} else {
+				deletedCount++
+			}
+		}
+	}
+
+	if deletedCount > 0 {
+		t.Logf("Cleaned up %d orphaned test secrets", deletedCount)
+	}
+}
+
 // GetCommonTestVars returns common variables used across tests
 func GetCommonTestVars(uniqueID string) map[string]interface{} {
 	return map[string]interface{}{
