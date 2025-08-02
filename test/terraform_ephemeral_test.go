@@ -59,11 +59,11 @@ func TestEphemeralVsRegularMode(t *testing.T) {
 				},
 			}
 
-			// Ensure cleanup happens even if test fails
-			defer terraform.Destroy(t, terraformOptions)
-			
-			// Deploy the infrastructure
+			// Deploy the infrastructure first, then set up cleanup
 			terraform.InitAndApply(t, terraformOptions)
+			
+			// Ensure cleanup happens even if test fails - but only after successful deployment
+			defer terraform.Destroy(t, terraformOptions)
 
 			// Get the Terraform state
 			state := terraform.Show(t, terraformOptions)
@@ -181,10 +181,11 @@ func TestEphemeralSecretTypes(t *testing.T) {
 				},
 			}
 
-			// Ensure cleanup happens even if test fails
-			defer terraform.Destroy(t, terraformOptions)
-			
+			// Deploy the infrastructure first, then set up cleanup
 			terraform.InitAndApply(t, terraformOptions)
+			
+			// Ensure cleanup happens even if test fails - but only after successful deployment
+			defer terraform.Destroy(t, terraformOptions)
 
 			// Verify the secret exists and validate its value FIRST
 			secretArns := terraform.OutputMap(t, terraformOptions, "secret_arns")
@@ -241,11 +242,11 @@ func TestEphemeralSecretVersioning(t *testing.T) {
 		},
 	}
 
-	// Ensure cleanup happens even if test fails
-	defer terraform.Destroy(t, terraformOptions)
-	
-	// Deploy initial version
+	// Deploy initial version first, then set up cleanup
 	terraform.InitAndApply(t, terraformOptions)
+	
+	// Ensure cleanup happens even if test fails - but only after successful deployment
+	defer terraform.Destroy(t, terraformOptions)
 
 	// Verify initial secret value
 	secretArns := terraform.OutputMap(t, terraformOptions, "secret_arns")

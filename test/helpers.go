@@ -192,8 +192,15 @@ func CleanupAllTestSecrets(t *testing.T, region string) {
 
 		// Check for recent test-pattern secrets (created in last 4 hours)
 		if !shouldDelete && secret.CreatedDate != nil {
-			timeSinceCreation := time.Since(*secret.CreatedDate)
-			if timeSinceCreation < 4*time.Hour {
+			// Validate time calculation is safe
+			createdDate := *secret.CreatedDate
+			if createdDate.IsZero() {
+				continue // Skip secrets with invalid creation dates
+			}
+			
+			timeSinceCreation := time.Since(createdDate)
+			// Add bounds checking to prevent negative durations or clock skew issues
+			if timeSinceCreation >= 0 && timeSinceCreation < 4*time.Hour {
 				testPatterns := []string{"test-", "terratest-", "ephemeral-", "validation-"}
 				secretNameLower := strings.ToLower(secretName)
 				for _, pattern := range testPatterns {

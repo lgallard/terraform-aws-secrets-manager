@@ -56,15 +56,28 @@ func main() {
 
 	log.Printf("Starting cleanup of test secrets in region %s", region)
 
-	// List all secrets
+	// List all secrets with pagination support
+	var allSecrets []*secretsmanager.SecretListEntry
 	input := &secretsmanager.ListSecretsInput{}
-	result, err := svc.ListSecrets(input)
-	if err != nil {
-		log.Fatalf("Failed to list secrets: %v", err)
+	
+	for {
+		result, err := svc.ListSecrets(input)
+		if err != nil {
+			log.Fatalf("Failed to list secrets: %v", err)
+		}
+		
+		allSecrets = append(allSecrets, result.SecretList...)
+		
+		// Check if there are more results
+		if result.NextToken == nil {
+			break
+		}
+		input.NextToken = result.NextToken
 	}
 
+	log.Printf("Found %d total secrets to evaluate", len(allSecrets))
 	deletedCount := 0
-	for _, secret := range result.SecretList {
+	for _, secret := range allSecrets {
 		if secret.Name == nil {
 			continue
 		}
@@ -104,8 +117,8 @@ func main() {
 					}
 				}
 				
-				// Also check if name contains typical test identifiers
-				if !shouldDelete {
+				// Add time bounds validation to prevent negative durations or clock skew issues
+				if !shouldDelete && timeSinceCreation >= 0 {
 					// Check for names with random suffix patterns (like Terratest generates)
 					if len(secretName) > 10 && strings.Contains(secretName, "-") {
 						parts := strings.Split(secretName, "-")
@@ -139,22 +152,15 @@ func main() {
 
 	log.Printf("Cleanup completed. Deleted %d test secrets.", deletedCount)
 
-	// Additional cleanup for any remaining test resources
-	cleanupByTags(svc)
+	// Additional cleanup for any remaining test resources using the same secret list
+	cleanupByTags(svc, allSecrets)
 }
 
-func cleanupByTags(svc *secretsmanager.SecretsManager) {
+func cleanupByTags(svc *secretsmanager.SecretsManager, secrets []*secretsmanager.SecretListEntry) {
 	log.Println("Performing tag-based cleanup...")
 
-	input := &secretsmanager.ListSecretsInput{}
-	result, err := svc.ListSecrets(input)
-	if err != nil {
-		log.Printf("Failed to list secrets for tag cleanup: %v", err)
-		return
-	}
-
 	deletedCount := 0
-	for _, secret := range result.SecretList {
+	for _, secret := range secrets {
 		if secret.Name == nil {
 			continue
 		}
