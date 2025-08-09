@@ -5,6 +5,13 @@
 
 * replicate security-hardened Claude Code Review workflow with PR focus ([#126](https://github.com/lgallard/terraform-aws-secrets-manager/issues/126)) ([a3e9803](https://github.com/lgallard/terraform-aws-secrets-manager/commit/a3e98038376bd2f32956ababb7c7a3e13255a645))
 
+## [0.22.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.21.0...0.22.0) (2025-08-09)
+
+
+### Features
+
+* add MCP server support for enhanced documentation access ([#138](https://github.com/lgallard/terraform-aws-secrets-manager/issues/138)) ([dea62f1](https://github.com/lgallard/terraform-aws-secrets-manager/commit/dea62f103068f728c5b0003a7c3ff421c2a2cae2))
+
 ## [0.21.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.20.2...0.21.0) (2025-08-07)
 
 
