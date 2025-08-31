@@ -39,13 +39,41 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Validate repository hygiene
+        run: |
+          # Check for prohibited files that should never be committed
+          PROHIBITED_FILES=""
+
+          if find . -name "*.tfstate*" -not -path "./.git/*" | grep -q .; then
+            PROHIBITED_FILES="$PROHIBITED_FILES\n- Terraform state files (*.tfstate*)"
+          fi
+
+          if [ -f "package-lock.json" ] && [ ! -s "package-lock.json" ]; then
+            PROHIBITED_FILES="$PROHIBITED_FILES\n- Empty package-lock.json"
+          fi
+
+          if [ -f ".env" ] || [ -f ".env.local" ]; then
+            PROHIBITED_FILES="$PROHIBITED_FILES\n- Environment files (.env*)"
+          fi
+
+          if [ -n "$PROHIBITED_FILES" ]; then
+            echo "❌ Repository hygiene check failed!"
+            echo "The following prohibited files were found:"
+            echo -e "$PROHIBITED_FILES"
+            echo ""
+            echo "Please remove these files before running the feature discovery workflow."
+            exit 1
+          fi
+
+          echo "✅ Repository hygiene check passed!"
+
       - name: Create feature tracker directory
         run: |
           mkdir -p .github/feature-tracker
 
           # Create initial tracker file if it doesn't exist
-          if [ ! -f .github/feature-tracker/secrets-features.json ]; then
-            cat > .github/feature-tracker/secrets-features.json << 'EOF'
+          if [ ! -f .github/feature-tracker/secrets-manager-features.json ]; then
+            cat > .github/feature-tracker/secrets-manager-features.json << 'EOF'
           {
             "last_scan": "1970-01-01T00:00:00Z",
             "provider_version": "0.0.0",
@@ -122,7 +150,7 @@ jobs:
             ### Step 1: Load Current State
             Read the feature tracking database:
             ```bash
-            cat .github/feature-tracker/secrets-features.json
+            cat .github/feature-tracker/secrets-manager-features.json
             ```
 
             ### Step 2: Fetch AWS Provider Secrets Manager Documentation
@@ -202,7 +230,7 @@ jobs:
             ```
 
             ### Step 6: Update Feature Tracker
-            Update `.github/feature-tracker/secrets-features.json` with:
+            Update `.github/feature-tracker/secrets-manager-features.json` with:
             - Current scan timestamp
             - Provider version analyzed
             - New findings
@@ -227,6 +255,19 @@ jobs:
 
             ## Expected Output
             Provide a detailed report of your analysis and actions taken.
+
+      - name: Handle Claude Code errors
+        if: steps.claude-discovery.conclusion == 'failure'
+        run: |
+          echo "❌ Claude Code feature discovery failed"
+          echo "This may be due to:"
+          echo "- MCP server connectivity issues"
+          echo "- Terraform registry API limitations"
+          echo "- Provider documentation parsing errors"
+          echo "- GitHub API rate limiting"
+          echo ""
+          echo "Check the logs above for specific error details."
+          echo "Consider running the workflow again or using manual mode."
 
       - name: Commit feature tracker updates
         if: steps.claude-discovery.conclusion == 'success'
@@ -280,10 +321,15 @@ jobs:
 
           # Status
           echo "### 📊 Execution Status" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Repository Hygiene**: Passed validation" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.claude-discovery.conclusion }}" = "success" ]; then
             echo "- ✅ **Feature Discovery**: Completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ **Feature Tracker**: Updated with latest scan results" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.claude-discovery.conclusion }}" = "failure" ]; then
+            echo "- ❌ **Feature Discovery**: Failed (see error handling step for details)" >> $GITHUB_STEP_SUMMARY
+            echo "- ⏭️ **Feature Tracker**: Skipped due to discovery failure" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ❌ **Feature Discovery**: Failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ⏳ **Feature Discovery**: In progress or skipped" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
 

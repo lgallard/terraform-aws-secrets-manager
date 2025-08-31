@@ -1,0 +1,36 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform plan files
+*.tfplan
+*.tfplan.*
+
+# Terraform provider cache
+.terraform/
+.terraform.lock.hcl
+
+# Terraform variables files containing sensitive data
+*.tfvars
+*.tfvars.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.log
