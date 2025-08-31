@@ -115,17 +115,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Create directory with error handling
-          if ! mkdir -p .github/feature-tracker; then
-            echo "❌ Failed to create feature tracker directory"
-            exit 1
-          fi
-
-          # Validate workflow inputs using security kernel
-          if ! security_validate_inputs "${{ inputs.provider_version || 'latest' }}" "${{ inputs.dry_run }}" "${{ inputs.force_scan }}"; then
-            echo "❌ Input validation failed"
-            exit 1
-          fi
+          # =============================================================================
+          # FUNCTION DEFINITIONS - All functions must be defined before use
+          # =============================================================================
 
           # Security Kernel - Centralized input validation and sanitization
           security_validate_inputs() {
@@ -210,6 +202,76 @@ jobs:
 
             echo "$assignee"
           }
+
+          # Legacy sanitize_for_markdown function (for backward compatibility)
+          sanitize_for_markdown() {
+            echo "$1" | sed -e 's/[<>&"]/\\&/g' -e "s/'/\\&#39;/g" -e 's/\[/\\[/g' -e 's/\]/\\]/g' -e 's/`/\\`/g'
+          }
+
+          # Atomic file operation wrapper for safe concurrent access
+          atomic_file_operation() {
+            local operation="$1"
+            local file_path="$2"
+            local content="${3:-}"
+            local temp_file=$(mktemp)
+
+            case "$operation" in
+              "write")
+                echo "$content" > "$temp_file" && mv "$temp_file" "$file_path"
+                ;;
+              "append")
+                if [ -f "$file_path" ]; then
+                  cp "$file_path" "$temp_file"
+                fi
+                echo "$content" >> "$temp_file" && mv "$temp_file" "$file_path"
+                ;;
+              *)
+                echo "❌ Unsupported atomic operation: $operation"
+                rm -f "$temp_file"
+                return 1
+                ;;
+            esac
+          }
+
+          # Git configuration wrapper with proper error handling
+          git_config_safe() {
+            local config_key="$1"
+            local config_value="$2"
+
+            # Check if we're in a git repository
+            if ! git rev-parse --git-dir >/dev/null 2>&1; then
+              echo "⚠️ Not in a git repository, initializing..."
+              if ! git init; then
+                echo "❌ Failed to initialize git repository"
+                return 1
+              fi
+            fi
+
+            # Set git configuration with error handling
+            if ! git config "$config_key" "$config_value"; then
+              echo "❌ Failed to configure git $config_key"
+              return 1
+            fi
+
+            echo "✅ Git configuration set: $config_key = $config_value"
+            return 0
+          }
+
+          # =============================================================================
+          # MAIN EXECUTION - Functions are now defined and can be safely called
+          # =============================================================================
+
+          # Create directory with error handling
+          if ! mkdir -p .github/feature-tracker; then
+            echo "❌ Failed to create feature tracker directory"
+            exit 1
+          fi
+
+          # Validate workflow inputs using security kernel
+          if ! security_validate_inputs "${{ inputs.provider_version || 'latest' }}" "${{ inputs.dry_run }}" "${{ inputs.force_scan }}"; then
+            echo "❌ Input validation failed"
+            exit 1
+          fi
 
           # Create initial tracker file if it doesn't exist (atomic creation)
           if [ ! -f .github/feature-tracker/secrets-manager-features.json ]; then
@@ -550,9 +612,9 @@ jobs:
               fi
             fi
 
-            # For deprecations - with sanitization and error handling
+            # For deprecations - with enhanced structured sanitization
             if [ -n "$DEPRECATED_FEATURE" ]; then
-              SAFE_DEPRECATED_NAME=$(sanitize_for_markdown "$DEPRECATED_FEATURE")
+              SAFE_DEPRECATED_NAME=$(sanitize_template_parameter "$DEPRECATED_FEATURE" "feature_name")
 
               if ! ERROR_OUTPUT=$(gh issue create \
                 --template .github/ISSUE_TEMPLATE/secrets-deprecation.md \
@@ -562,32 +624,14 @@ jobs:
 
                 echo "⚠️ Failed to create deprecation issue - storing in tracker for manual creation"
 
-                # Update tracker with failed issue details
-                TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
-                TEMP_FILE=$(mktemp)
-
-                jq --arg type "deprecation" \
-                   --arg title "chore: Handle deprecation of $SAFE_DEPRECATED_NAME" \
-                   --arg labels "deprecation,breaking-change,auto-discovered" \
-                   --arg assignee "$ASSIGNEE" \
-                   --arg error "$ERROR_OUTPUT" \
-                   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-                   '.failed_issues += [{
-                     "type": $type,
-                     "title": $title,
-                     "labels": $labels,
-                     "assignee": $assignee,
-                     "error_message": $error,
-                     "failure_timestamp": $timestamp,
-                     "retry_count": 0
-                   }] | .statistics.total_failed_issues += 1' \
-                   "$TRACKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$TRACKER_FILE"
+                update_failed_issue_stats "deprecation" "chore: Handle deprecation of $SAFE_DEPRECATED_NAME" \
+                  "deprecation,breaking-change,auto-discovered" "$ASSIGNEE" "$ERROR_OUTPUT"
               fi
             fi
 
-            # For bug fixes - with sanitization and error handling
+            # For bug fixes - with enhanced structured sanitization
             if [ -n "$BUG_DESCRIPTION" ]; then
-              SAFE_BUG_DESCRIPTION=$(sanitize_for_markdown "$BUG_DESCRIPTION")
+              SAFE_BUG_DESCRIPTION=$(sanitize_template_parameter "$BUG_DESCRIPTION" "feature_name")
 
               if ! ERROR_OUTPUT=$(gh issue create \
                 --template .github/ISSUE_TEMPLATE/secrets-bug-fix.md \
@@ -597,26 +641,8 @@ jobs:
 
                 echo "⚠️ Failed to create bug fix issue - storing in tracker for manual creation"
 
-                # Update tracker with failed issue details
-                TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
-                TEMP_FILE=$(mktemp)
-
-                jq --arg type "bug_fix" \
-                   --arg title "fix: Address $SAFE_BUG_DESCRIPTION" \
-                   --arg labels "bug,aws-provider-update,auto-discovered" \
-                   --arg assignee "$ASSIGNEE" \
-                   --arg error "$ERROR_OUTPUT" \
-                   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-                   '.failed_issues += [{
-                     "type": $type,
-                     "title": $title,
-                     "labels": $labels,
-                     "assignee": $assignee,
-                     "error_message": $error,
-                     "failure_timestamp": $timestamp,
-                     "retry_count": 0
-                   }] | .statistics.total_failed_issues += 1' \
-                   "$TRACKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$TRACKER_FILE"
+                update_failed_issue_stats "bug_fix" "fix: Address $SAFE_BUG_DESCRIPTION" \
+                  "bug,aws-provider-update,auto-discovered" "$ASSIGNEE" "$ERROR_OUTPUT"
               fi
             fi
             ```
@@ -666,54 +692,101 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Lease-based file locking with timeout protection
+          # =============================================================================
+          # FUNCTION DEFINITIONS - Required functions for this step
+          # =============================================================================
+
+          # Centralized timestamp authority
+          get_iso_timestamp() {
+            date -u +%Y-%m-%dT%H:%M:%SZ
+          }
+
+          # Git configuration wrapper with proper error handling
+          git_config_safe() {
+            local config_key="$1"
+            local config_value="$2"
+
+            # Check if we're in a git repository
+            if ! git rev-parse --git-dir >/dev/null 2>&1; then
+              echo "⚠️ Not in a git repository, initializing..."
+              if ! git init; then
+                echo "❌ Failed to initialize git repository"
+                return 1
+              fi
+            fi
+
+            # Set git configuration with error handling
+            if ! git config "$config_key" "$config_value"; then
+              echo "❌ Failed to configure git $config_key"
+              return 1
+            fi
+
+            echo "✅ Git configuration set: $config_key = $config_value"
+            return 0
+          }
+
+          # Atomic lease-based file locking with race condition protection
           acquire_tracker_lock() {
             local LOCK_FILE=".github/feature-tracker/.lock"
             local LOCK_TIMEOUT=300  # 5 minutes
             local LEASE_DURATION=600  # 10 minutes
             local CURRENT_TIME=$(date +%s)
+            local PROCESS_ID=$$
+            local LOCK_CONTENT="${CURRENT_TIME}:${PROCESS_ID}:${{ github.run_id }}"
 
-            # Check if lock file exists and is still valid
-            if [ -f "$LOCK_FILE" ]; then
-              local LOCK_TIME=$(cat "$LOCK_FILE" 2>/dev/null || echo "0")
-              local LOCK_AGE=$((CURRENT_TIME - LOCK_TIME))
+            echo "🔐 Attempting to acquire tracker lock..."
 
-              if [ "$LOCK_AGE" -lt "$LEASE_DURATION" ]; then
-                echo "⚠️ Lock is still valid (age: ${LOCK_AGE}s), waiting with timeout..."
+            # Atomic check-and-set operation using mkdir (atomic in most filesystems)
+            local ATTEMPT=0
+            local MAX_ATTEMPTS=60  # 5 minutes with 5-second intervals
 
-                # Wait for lock with timeout
-                local WAIT_TIME=0
-                while [ -f "$LOCK_FILE" ] && [ "$WAIT_TIME" -lt "$LOCK_TIMEOUT" ]; do
-                  sleep 5
-                  WAIT_TIME=$((WAIT_TIME + 5))
+            while [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; do
+              # Try to atomically create lock directory
+              if mkdir "${LOCK_FILE}.lock" 2>/dev/null; then
+                # Successfully acquired lock directory, write lock content
+                echo "$LOCK_CONTENT" > "$LOCK_FILE"
+                rmdir "${LOCK_FILE}.lock"  # Clean up lock directory
 
-                  # Check if lock expired during wait
-                  if [ -f "$LOCK_FILE" ]; then
-                    LOCK_TIME=$(cat "$LOCK_FILE" 2>/dev/null || echo "0")
-                    LOCK_AGE=$(($(date +%s) - LOCK_TIME))
-                    if [ "$LOCK_AGE" -ge "$LEASE_DURATION" ]; then
-                      echo "🔓 Lock expired during wait, claiming it"
-                      break
-                    fi
+                echo "🔒 Acquired tracker lock (PID: $PROCESS_ID, expires in ${LEASE_DURATION}s)"
+
+                # Set trap to release lock on exit
+                trap "rm -f '$LOCK_FILE' 2>/dev/null || true" EXIT
+                return 0
+              fi
+
+              # Lock directory exists, check if existing lock is expired
+              if [ -f "$LOCK_FILE" ]; then
+                local LOCK_INFO=$(cat "$LOCK_FILE" 2>/dev/null || echo "0:0:unknown")
+                local LOCK_TIME=$(echo "$LOCK_INFO" | cut -d: -f1)
+                local LOCK_PID=$(echo "$LOCK_INFO" | cut -d: -f2)
+                local LOCK_RUN=$(echo "$LOCK_INFO" | cut -d: -f3)
+                local LOCK_AGE=$((CURRENT_TIME - LOCK_TIME))
+
+                if [ "$LOCK_AGE" -ge "$LEASE_DURATION" ]; then
+                  echo "🔓 Found expired lock (age: ${LOCK_AGE}s, PID: $LOCK_PID, run: $LOCK_RUN)"
+
+                  # Attempt to claim expired lock atomically
+                  if mkdir "${LOCK_FILE}.cleanup" 2>/dev/null; then
+                    rm -f "$LOCK_FILE"
+                    rmdir "${LOCK_FILE}.cleanup"
+                    continue  # Try to acquire again
                   fi
-                done
+                fi
 
-                if [ "$WAIT_TIME" -ge "$LOCK_TIMEOUT" ]; then
-                  echo "❌ Timeout waiting for lock after ${LOCK_TIMEOUT}s"
-                  return 1
+                if [ "$((ATTEMPT % 12))" -eq 0 ]; then  # Log every minute
+                  echo "⏳ Waiting for lock held by PID $LOCK_PID (run: $LOCK_RUN, age: ${LOCK_AGE}s)..."
                 fi
               else
-                echo "🔓 Found expired lock (age: ${LOCK_AGE}s), claiming it"
+                # Lock file disappeared, try again
+                continue
               fi
-            fi
 
-            # Acquire lock by writing current timestamp
-            echo "$CURRENT_TIME" > "$LOCK_FILE"
-            echo "🔒 Acquired tracker lock (lease expires in ${LEASE_DURATION}s)"
+              ATTEMPT=$((ATTEMPT + 1))
+              sleep 5
+            done
 
-            # Set trap to release lock on exit
-            trap 'rm -f "$LOCK_FILE" 2>/dev/null || true' EXIT
-            return 0
+            echo "❌ Failed to acquire lock after $((MAX_ATTEMPTS * 5)) seconds"
+            return 1
           }
 
           # Acquire lock before proceeding
@@ -728,17 +801,17 @@ jobs:
             exit 0
           fi
 
-          # Prepare secure commit message variables
-          SCAN_TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          # Prepare secure commit message variables using centralized timestamp
+          SCAN_TIMESTAMP="$(get_iso_timestamp)"
           PROVIDER_VERSION="${{ inputs.provider_version || 'latest' }}"
 
-          # Configure git with error handling
-          if ! git config --global user.name "Secrets Manager Feature Discovery Bot"; then
+          # Configure git with safe error handling
+          if ! git_config_safe "user.name" "Secrets Manager Feature Discovery Bot"; then
             echo "❌ Failed to configure git user name"
             exit 1
           fi
 
-          if ! git config --global user.email "actions@github.com"; then
+          if ! git_config_safe "user.email" "actions@github.com"; then
             echo "❌ Failed to configure git user email"
             exit 1
           fi
