@@ -121,18 +121,35 @@ jobs:
             exit 1
           fi
 
+          # Sanitization function for safe markdown insertion
+          sanitize_for_markdown() {
+            echo "$1" | sed -e 's/[<>&"]/\\&/g' -e "s/'/\\&#39;/g" -e 's/\[/\\[/g' -e 's/\]/\\]/g'
+          }
+
+          # Determine assignee with fallback for scheduled runs
+          determine_assignee() {
+            local assignee="${{ github.actor }}"
+            if [ "${{ github.event_name }}" = "schedule" ] || [ -z "$assignee" ] || [ "$assignee" = "github-actions[bot]" ]; then
+              assignee="${{ github.repository_owner }}"
+            fi
+            echo "$assignee"
+          }
+
           # Create initial tracker file if it doesn't exist (atomic creation)
           if [ ! -f .github/feature-tracker/secrets-manager-features.json ]; then
             # Create temporary file for atomic write
             TEMP_FILE=$(mktemp)
 
+            # Get current timestamp for initial values
+            INITIAL_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
             # Write content to temporary file
-            cat > "$TEMP_FILE" << 'EOF'
+            cat > "$TEMP_FILE" << EOF
           {
             "metadata": {
               "module_name": "terraform-aws-secrets-manager",
-              "last_scan": null,
-              "provider_version": null,
+              "last_scan": "$INITIAL_TIMESTAMP",
+              "provider_version": "unknown",
               "scan_count": 0
             },
             "scan_history": [],
@@ -239,12 +256,14 @@ jobs:
               "bug_fixes": {}
             },
             "issues_created": [],
+            "failed_issues": [],
             "statistics": {
               "total_scans": 0,
               "total_features_discovered": 0,
               "total_issues_created": 0,
+              "total_failed_issues": 0,
               "average_features_per_scan": 0,
-              "last_feature_discovery": "never"
+              "last_feature_discovery": "$INITIAL_TIMESTAMP"
             }
           }
           EOF
@@ -391,29 +410,113 @@ jobs:
             Create GitHub issues using templates with proper error handling:
 
             ```bash
-            # For new features - with error handling
-            if ! gh issue create --template .github/ISSUE_TEMPLATE/new-secrets-feature.md \
-              --title "feat: Add support for [feature_name]" \
-              --label "enhancement,aws-provider-update,auto-discovered" \
-              --assignee "${{ github.actor }}"; then
-              echo "⚠️ Failed to create feature issue - storing in tracker for manual creation"
-              # Log failure details to tracker for later manual processing
+            # Get assignee with fallback
+            ASSIGNEE=$(determine_assignee)
+
+            # For new features - with sanitization and error handling
+            if [ -n "$FEATURE_NAME" ]; then
+              SAFE_FEATURE_NAME=$(sanitize_for_markdown "$FEATURE_NAME")
+              SAFE_DESCRIPTION=$(sanitize_for_markdown "$FEATURE_DESCRIPTION")
+
+              if ! ERROR_OUTPUT=$(gh issue create \
+                --template .github/ISSUE_TEMPLATE/new-secrets-feature.md \
+                --title "feat: Add support for $SAFE_FEATURE_NAME" \
+                --label "enhancement,aws-provider-update,auto-discovered" \
+                --assignee "$ASSIGNEE" 2>&1); then
+
+                echo "⚠️ Failed to create feature issue - storing in tracker for manual creation"
+
+                # Update tracker with failed issue details
+                TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
+                TEMP_FILE=$(mktemp)
+
+                jq --arg type "feature" \
+                   --arg title "feat: Add support for $SAFE_FEATURE_NAME" \
+                   --arg labels "enhancement,aws-provider-update,auto-discovered" \
+                   --arg assignee "$ASSIGNEE" \
+                   --arg error "$ERROR_OUTPUT" \
+                   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                   '.failed_issues += [{
+                     "type": $type,
+                     "title": $title,
+                     "labels": $labels,
+                     "assignee": $assignee,
+                     "error_message": $error,
+                     "failure_timestamp": $timestamp,
+                     "retry_count": 0
+                   }] | .statistics.total_failed_issues += 1' \
+                   "$TRACKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$TRACKER_FILE"
+              fi
             fi
 
-            # For deprecations - with error handling
-            if ! gh issue create --template .github/ISSUE_TEMPLATE/secrets-deprecation.md \
-              --title "chore: Handle deprecation of [feature_name]" \
-              --label "deprecation,breaking-change,auto-discovered" \
-              --assignee "${{ github.actor }}"; then
-              echo "⚠️ Failed to create deprecation issue - storing in tracker for manual creation"
+            # For deprecations - with sanitization and error handling
+            if [ -n "$DEPRECATED_FEATURE" ]; then
+              SAFE_DEPRECATED_NAME=$(sanitize_for_markdown "$DEPRECATED_FEATURE")
+
+              if ! ERROR_OUTPUT=$(gh issue create \
+                --template .github/ISSUE_TEMPLATE/secrets-deprecation.md \
+                --title "chore: Handle deprecation of $SAFE_DEPRECATED_NAME" \
+                --label "deprecation,breaking-change,auto-discovered" \
+                --assignee "$ASSIGNEE" 2>&1); then
+
+                echo "⚠️ Failed to create deprecation issue - storing in tracker for manual creation"
+
+                # Update tracker with failed issue details
+                TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
+                TEMP_FILE=$(mktemp)
+
+                jq --arg type "deprecation" \
+                   --arg title "chore: Handle deprecation of $SAFE_DEPRECATED_NAME" \
+                   --arg labels "deprecation,breaking-change,auto-discovered" \
+                   --arg assignee "$ASSIGNEE" \
+                   --arg error "$ERROR_OUTPUT" \
+                   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                   '.failed_issues += [{
+                     "type": $type,
+                     "title": $title,
+                     "labels": $labels,
+                     "assignee": $assignee,
+                     "error_message": $error,
+                     "failure_timestamp": $timestamp,
+                     "retry_count": 0
+                   }] | .statistics.total_failed_issues += 1' \
+                   "$TRACKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$TRACKER_FILE"
+              fi
             fi
 
-            # For bug fixes - with error handling
-            if ! gh issue create --template .github/ISSUE_TEMPLATE/secrets-bug-fix.md \
-              --title "fix: Address [bug_description]" \
-              --label "bug,aws-provider-update,auto-discovered" \
-              --assignee "${{ github.actor }}"; then
-              echo "⚠️ Failed to create bug fix issue - storing in tracker for manual creation"
+            # For bug fixes - with sanitization and error handling
+            if [ -n "$BUG_DESCRIPTION" ]; then
+              SAFE_BUG_DESCRIPTION=$(sanitize_for_markdown "$BUG_DESCRIPTION")
+
+              if ! ERROR_OUTPUT=$(gh issue create \
+                --template .github/ISSUE_TEMPLATE/secrets-bug-fix.md \
+                --title "fix: Address $SAFE_BUG_DESCRIPTION" \
+                --label "bug,aws-provider-update,auto-discovered" \
+                --assignee "$ASSIGNEE" 2>&1); then
+
+                echo "⚠️ Failed to create bug fix issue - storing in tracker for manual creation"
+
+                # Update tracker with failed issue details
+                TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
+                TEMP_FILE=$(mktemp)
+
+                jq --arg type "bug_fix" \
+                   --arg title "fix: Address $SAFE_BUG_DESCRIPTION" \
+                   --arg labels "bug,aws-provider-update,auto-discovered" \
+                   --arg assignee "$ASSIGNEE" \
+                   --arg error "$ERROR_OUTPUT" \
+                   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                   '.failed_issues += [{
+                     "type": $type,
+                     "title": $title,
+                     "labels": $labels,
+                     "assignee": $assignee,
+                     "error_message": $error,
+                     "failure_timestamp": $timestamp,
+                     "retry_count": 0
+                   }] | .statistics.total_failed_issues += 1' \
+                   "$TRACKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$TRACKER_FILE"
+              fi
             fi
             ```
 
@@ -461,6 +564,17 @@ jobs:
         if: steps.claude-discovery.conclusion == 'success'
         run: |
           set -euo pipefail
+
+          # File locking for atomic operations
+          LOCK_FILE=".github/feature-tracker/.lock"
+          exec 200>"$LOCK_FILE"
+
+          if ! flock -n 200; then
+            echo "⚠️ Another instance is updating the tracker, waiting..."
+            flock 200  # Wait for lock
+          fi
+
+          echo "🔒 Acquired file lock for tracker updates"
 
           # Check if there are changes to commit
           if git diff --quiet .github/feature-tracker/; then
