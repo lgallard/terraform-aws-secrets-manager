@@ -23,6 +23,11 @@ on:
         default: false
         type: boolean
 
+# Prevent concurrent runs to avoid race conditions in feature tracker
+concurrency:
+  group: secrets-manager-feature-discovery
+  cancel-in-progress: false
+
 jobs:
   discover-secrets-features:
     runs-on: ubuntu-latest
@@ -124,11 +129,123 @@ jobs:
             # Write content to temporary file
             cat > "$TEMP_FILE" << 'EOF'
           {
-            "last_scan": null,
-            "provider_version": null,
+            "metadata": {
+              "module_name": "terraform-aws-secrets-manager",
+              "last_scan": null,
+              "provider_version": null,
+              "scan_count": 0
+            },
             "scan_history": [],
-            "features": {},
-            "issues_created": []
+            "current_implementation": {
+              "resources": {
+                "aws_secretsmanager_secret": {
+                  "implemented": [
+                    "name",
+                    "description",
+                    "kms_key_id",
+                    "policy",
+                    "recovery_window_in_days",
+                    "force_overwrite_replica_secret",
+                    "replica",
+                    "tags"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                },
+                "aws_secretsmanager_secret_version": {
+                  "implemented": [
+                    "secret_id",
+                    "secret_string",
+                    "secret_binary",
+                    "version_stages"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                },
+                "aws_secretsmanager_secret_rotation": {
+                  "implemented": [
+                    "secret_id",
+                    "rotation_lambda_arn",
+                    "rotation_rules"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                },
+                "aws_secretsmanager_secret_policy": {
+                  "implemented": [
+                    "secret_arn",
+                    "policy",
+                    "block_public_policy"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                }
+              },
+              "data_sources": {
+                "aws_secretsmanager_secret": {
+                  "implemented": [
+                    "name",
+                    "arn"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                },
+                "aws_secretsmanager_secret_version": {
+                  "implemented": [
+                    "secret_id",
+                    "version_id",
+                    "version_stage"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                },
+                "aws_secretsmanager_secrets": {
+                  "implemented": [
+                    "filter"
+                  ],
+                  "pending": [],
+                  "deprecated": []
+                }
+              },
+              "examples": {
+                "complete": {
+                  "resources": [
+                    "aws_secretsmanager_secret",
+                    "aws_secretsmanager_secret_version",
+                    "aws_secretsmanager_secret_rotation",
+                    "aws_secretsmanager_secret_policy"
+                  ]
+                },
+                "basic": {
+                  "resources": [
+                    "aws_secretsmanager_secret",
+                    "aws_secretsmanager_secret_version"
+                  ]
+                },
+                "rotation": {
+                  "resources": [
+                    "aws_secretsmanager_secret",
+                    "aws_secretsmanager_secret_version",
+                    "aws_secretsmanager_secret_rotation"
+                  ]
+                }
+              }
+            },
+            "discovered_features": {
+              "new_resources": {},
+              "new_arguments": {},
+              "new_data_sources": {},
+              "deprecated_items": {},
+              "bug_fixes": {}
+            },
+            "issues_created": [],
+            "statistics": {
+              "total_scans": 0,
+              "total_features_discovered": 0,
+              "total_issues_created": 0,
+              "average_features_per_scan": 0,
+              "last_feature_discovery": "never"
+            }
           }
           EOF
 
@@ -262,28 +379,42 @@ jobs:
             ### Step 5: Issue Creation
             For each significant finding:
 
+            **IMPORTANT: Sanitization Requirements**
+            - Sanitize feature names before inserting into templates
+            - Escape special characters in descriptions and titles
+            - Replace [feature_name] with actual feature names (no brackets)
+            - Ensure all template placeholders are properly filled
+            - Avoid injection attacks by cleaning markdown/HTML in feature descriptions
+
             **If NOT in dry run mode (${{ inputs.dry_run }} == false):**
 
-            Create GitHub issues using templates:
+            Create GitHub issues using templates with proper error handling:
 
             ```bash
-            # For new features
-            gh issue create --template .github/ISSUE_TEMPLATE/new-secrets-feature.md \
+            # For new features - with error handling
+            if ! gh issue create --template .github/ISSUE_TEMPLATE/new-secrets-feature.md \
               --title "feat: Add support for [feature_name]" \
               --label "enhancement,aws-provider-update,auto-discovered" \
-              --assignee "@me"
+              --assignee "${{ github.actor }}"; then
+              echo "⚠️ Failed to create feature issue - storing in tracker for manual creation"
+              # Log failure details to tracker for later manual processing
+            fi
 
-            # For deprecations
-            gh issue create --template .github/ISSUE_TEMPLATE/secrets-deprecation.md \
+            # For deprecations - with error handling
+            if ! gh issue create --template .github/ISSUE_TEMPLATE/secrets-deprecation.md \
               --title "chore: Handle deprecation of [feature_name]" \
               --label "deprecation,breaking-change,auto-discovered" \
-              --assignee "@me"
+              --assignee "${{ github.actor }}"; then
+              echo "⚠️ Failed to create deprecation issue - storing in tracker for manual creation"
+            fi
 
-            # For bug fixes
-            gh issue create --template .github/ISSUE_TEMPLATE/secrets-bug-fix.md \
+            # For bug fixes - with error handling
+            if ! gh issue create --template .github/ISSUE_TEMPLATE/secrets-bug-fix.md \
               --title "fix: Address [bug_description]" \
               --label "bug,aws-provider-update,auto-discovered" \
-              --assignee "@me"
+              --assignee "${{ github.actor }}"; then
+              echo "⚠️ Failed to create bug fix issue - storing in tracker for manual creation"
+            fi
             ```
 
             ### Step 6: Update Feature Tracker
