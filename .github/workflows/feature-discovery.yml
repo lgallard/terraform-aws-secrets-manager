@@ -124,8 +124,8 @@ jobs:
             # Write content to temporary file
             cat > "$TEMP_FILE" << 'EOF'
           {
-            "last_scan": "1970-01-01T00:00:00Z",
-            "provider_version": "0.0.0",
+            "last_scan": null,
+            "provider_version": null,
             "scan_history": [],
             "features": {},
             "issues_created": []
