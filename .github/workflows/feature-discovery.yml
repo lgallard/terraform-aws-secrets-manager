@@ -171,6 +171,29 @@ jobs:
             esac
           }
 
+          # Process issue template with sanitized parameters
+          process_template_content() {
+            local template_file="$1"
+            local feature_name="$2"
+            local provider_version="$3"
+            local discovery_date="$4"
+            local resource_type="${5:-}"
+            local description="${6:-}"
+            local notes="${7:-}"
+
+            # Read template and replace placeholders with sanitized values
+            sed \
+              -e "s/\[FEATURE_NAME\]/$feature_name/g" \
+              -e "s/\[PROVIDER_VERSION\]/$provider_version/g" \
+              -e "s/\[DISCOVERY_DATE\]/$discovery_date/g" \
+              -e "s/\[RESOURCE_TYPE\]/$resource_type/g" \
+              -e "s/\[AUTO_GENERATED_DESCRIPTION\]/$description/g" \
+              -e "s/\[AUTO_GENERATED_NOTES\]/$notes/g" \
+              -e "s/\[PROVIDER_DOC_URL\]/https:\/\/registry.terraform.io\/providers\/hashicorp\/aws\/latest\/docs/g" \
+              -e "s/\[AWS_DOC_URL\]/https:\/\/docs.aws.amazon.com\/secretsmanager/g" \
+              "$template_file"
+          }
+
           # Centralized timestamp authority
           get_iso_timestamp() {
             date -u +%Y-%m-%dT%H:%M:%SZ
@@ -559,8 +582,18 @@ jobs:
               SAFE_PROVIDER_VERSION=$(sanitize_template_parameter "${{ inputs.provider_version || 'latest' }}" "version")
               DISCOVERY_DATE=$(get_iso_timestamp)
 
+              # Process template with sanitized parameters
+              ISSUE_BODY=$(process_template_content \
+                ".github/ISSUE_TEMPLATE/new-secrets-feature.md" \
+                "$SAFE_FEATURE_NAME" \
+                "$SAFE_PROVIDER_VERSION" \
+                "$DISCOVERY_DATE" \
+                "aws_secretsmanager_secret" \
+                "$SAFE_DESCRIPTION" \
+                "Automatically discovered by feature discovery workflow")
+
               if ! ERROR_OUTPUT=$(gh issue create \
-                --template .github/ISSUE_TEMPLATE/new-secrets-feature.md \
+                --body "$ISSUE_BODY" \
                 --title "feat: Add support for $SAFE_FEATURE_NAME" \
                 --label "enhancement,aws-provider-update,auto-discovered" \
                 --assignee "$ASSIGNEE" 2>&1); then
@@ -615,9 +648,20 @@ jobs:
             # For deprecations - with enhanced structured sanitization
             if [ -n "$DEPRECATED_FEATURE" ]; then
               SAFE_DEPRECATED_NAME=$(sanitize_template_parameter "$DEPRECATED_FEATURE" "feature_name")
+              DISCOVERY_DATE=$(get_iso_timestamp)
+
+              # Process template with sanitized parameters
+              ISSUE_BODY=$(process_template_content \
+                ".github/ISSUE_TEMPLATE/secrets-deprecation.md" \
+                "$SAFE_DEPRECATED_NAME" \
+                "$SAFE_PROVIDER_VERSION" \
+                "$DISCOVERY_DATE" \
+                "deprecated" \
+                "This feature has been deprecated in the AWS provider" \
+                "Review migration path and update module accordingly")
 
               if ! ERROR_OUTPUT=$(gh issue create \
-                --template .github/ISSUE_TEMPLATE/secrets-deprecation.md \
+                --body "$ISSUE_BODY" \
                 --title "chore: Handle deprecation of $SAFE_DEPRECATED_NAME" \
                 --label "deprecation,breaking-change,auto-discovered" \
                 --assignee "$ASSIGNEE" 2>&1); then
@@ -632,9 +676,20 @@ jobs:
             # For bug fixes - with enhanced structured sanitization
             if [ -n "$BUG_DESCRIPTION" ]; then
               SAFE_BUG_DESCRIPTION=$(sanitize_template_parameter "$BUG_DESCRIPTION" "feature_name")
+              DISCOVERY_DATE=$(get_iso_timestamp)
+
+              # Process template with sanitized parameters
+              ISSUE_BODY=$(process_template_content \
+                ".github/ISSUE_TEMPLATE/secrets-bug-fix.md" \
+                "$SAFE_BUG_DESCRIPTION" \
+                "$SAFE_PROVIDER_VERSION" \
+                "$DISCOVERY_DATE" \
+                "bug_fix" \
+                "This bug was discovered during automated provider analysis" \
+                "Requires immediate attention for module reliability")
 
               if ! ERROR_OUTPUT=$(gh issue create \
-                --template .github/ISSUE_TEMPLATE/secrets-bug-fix.md \
+                --body "$ISSUE_BODY" \
                 --title "fix: Address $SAFE_BUG_DESCRIPTION" \
                 --label "bug,aws-provider-update,auto-discovered" \
                 --assignee "$ASSIGNEE" 2>&1); then
@@ -736,16 +791,19 @@ jobs:
 
             echo "🔐 Attempting to acquire tracker lock..."
 
-            # Atomic check-and-set operation using mkdir (atomic in most filesystems)
+            # Atomic check-and-set operation using link (atomic on most filesystems)
             local ATTEMPT=0
             local MAX_ATTEMPTS=60  # 5 minutes with 5-second intervals
 
             while [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; do
-              # Try to atomically create lock directory
-              if mkdir "${LOCK_FILE}.lock" 2>/dev/null; then
-                # Successfully acquired lock directory, write lock content
-                echo "$LOCK_CONTENT" > "$LOCK_FILE"
-                rmdir "${LOCK_FILE}.lock"  # Clean up lock directory
+              # Create temporary file with lock content
+              local TEMP_LOCK_FILE=$(mktemp "${LOCK_FILE}.XXXXXX")
+              echo "$LOCK_CONTENT" > "$TEMP_LOCK_FILE"
+
+              # Try to atomically create lock file using link (atomic on most filesystems)
+              if ln "$TEMP_LOCK_FILE" "$LOCK_FILE" 2>/dev/null; then
+                # Successfully acquired lock, clean up temporary file
+                rm -f "$TEMP_LOCK_FILE"
 
                 echo "🔒 Acquired tracker lock (PID: $PROCESS_ID, expires in ${LEASE_DURATION}s)"
 
@@ -753,6 +811,9 @@ jobs:
                 trap "rm -f '$LOCK_FILE' 2>/dev/null || true" EXIT
                 return 0
               fi
+
+              # Failed to acquire lock, clean up temporary file
+              rm -f "$TEMP_LOCK_FILE"
 
               # Lock directory exists, check if existing lock is expired
               if [ -f "$LOCK_FILE" ]; then
