@@ -121,17 +121,93 @@ jobs:
             exit 1
           fi
 
-          # Sanitization function for safe markdown insertion
-          sanitize_for_markdown() {
-            echo "$1" | sed -e 's/[<>&"]/\\&/g' -e "s/'/\\&#39;/g" -e 's/\[/\\[/g' -e 's/\]/\\]/g'
+          # Validate workflow inputs using security kernel
+          if ! security_validate_inputs "${{ inputs.provider_version || 'latest' }}" "${{ inputs.dry_run }}" "${{ inputs.force_scan }}"; then
+            echo "❌ Input validation failed"
+            exit 1
+          fi
+
+          # Security Kernel - Centralized input validation and sanitization
+          security_validate_inputs() {
+            local provider_version="${1:-unknown}"
+            local dry_run="${2:-false}"
+            local force_scan="${3:-false}"
+
+            # Validate provider version format
+            if [[ ! "$provider_version" =~ ^(latest|[0-9]+\.[0-9]+\.[0-9]+)$ ]] && [ "$provider_version" != "unknown" ]; then
+              echo "⚠️ Invalid provider version format: $provider_version"
+              return 1
+            fi
+
+            # Validate boolean inputs
+            if [[ ! "$dry_run" =~ ^(true|false)$ ]]; then
+              echo "⚠️ Invalid dry_run value: $dry_run"
+              return 1
+            fi
+
+            if [[ ! "$force_scan" =~ ^(true|false)$ ]]; then
+              echo "⚠️ Invalid force_scan value: $force_scan"
+              return 1
+            fi
+
+            echo "✅ All inputs validated successfully"
+            return 0
           }
 
-          # Determine assignee with fallback for scheduled runs
+          # Enhanced sanitization for template parameters with structured approach
+          sanitize_template_parameter() {
+            local input="$1"
+            local param_type="${2:-text}"
+
+            case "$param_type" in
+              "feature_name")
+                # Extra strict for feature names - only allow alphanumeric, hyphens, underscores, spaces
+                echo "$input" | sed -e 's/[^a-zA-Z0-9_\- ]//g' -e 's/  */ /g' -e 's/^ *//g' -e 's/ *$//g'
+                ;;
+              "version")
+                # Only allow version-like strings
+                echo "$input" | sed -e 's/[^a-zA-Z0-9\.-]//g'
+                ;;
+              "date")
+                # Only allow ISO date format characters
+                echo "$input" | sed -e 's/[^0-9T:Z\-]//g'
+                ;;
+              *)
+                # General markdown sanitization
+                echo "$input" | sed -e 's/[<>&"]/\\&/g' -e "s/'/\\&#39;/g" -e 's/\[/\\[/g' -e 's/\]/\\]/g' -e 's/`/\\`/g'
+                ;;
+            esac
+          }
+
+          # Centralized timestamp authority
+          get_iso_timestamp() {
+            date -u +%Y-%m-%dT%H:%M:%SZ
+          }
+
+          # Organization-aware assignee resolution with validation
           determine_assignee() {
             local assignee="${{ github.actor }}"
-            if [ "${{ github.event_name }}" = "schedule" ] || [ -z "$assignee" ] || [ "$assignee" = "github-actions[bot]" ]; then
-              assignee="${{ github.repository_owner }}"
+            local repo_owner="${{ github.repository_owner }}"
+
+            # Check if this is an organization repository
+            if [ "${{ github.repository_owner_type }}" = "Organization" ]; then
+              # For org repos, try to use a team or fallback to owner
+              # First check if we have a designated team in repository variables
+              local designated_assignee="${{ vars.FEATURE_DISCOVERY_ASSIGNEE || '' }}"
+              if [ -n "$designated_assignee" ]; then
+                echo "$designated_assignee"
+                return 0
+              fi
+
+              # Fallback to repository owner for org repos
+              assignee="$repo_owner"
             fi
+
+            # Handle bot/scheduled runs
+            if [ "${{ github.event_name }}" = "schedule" ] || [ -z "$assignee" ] || [ "$assignee" = "github-actions[bot]" ]; then
+              assignee="$repo_owner"
+            fi
+
             echo "$assignee"
           }
 
@@ -140,8 +216,8 @@ jobs:
             # Create temporary file for atomic write
             TEMP_FILE=$(mktemp)
 
-            # Get current timestamp for initial values
-            INITIAL_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            # Get current timestamp for initial values using centralized authority
+            INITIAL_TIMESTAMP="$(get_iso_timestamp)"
 
             # Write content to temporary file
             cat > "$TEMP_FILE" << EOF
@@ -263,7 +339,8 @@ jobs:
               "total_issues_created": 0,
               "total_failed_issues": 0,
               "average_features_per_scan": 0,
-              "last_feature_discovery": "$INITIAL_TIMESTAMP"
+              "last_feature_discovery": "$INITIAL_TIMESTAMP",
+              "last_failure_timestamp": null
             }
           }
           EOF
@@ -413,10 +490,12 @@ jobs:
             # Get assignee with fallback
             ASSIGNEE=$(determine_assignee)
 
-            # For new features - with sanitization and error handling
+            # For new features - with enhanced structured sanitization
             if [ -n "$FEATURE_NAME" ]; then
-              SAFE_FEATURE_NAME=$(sanitize_for_markdown "$FEATURE_NAME")
-              SAFE_DESCRIPTION=$(sanitize_for_markdown "$FEATURE_DESCRIPTION")
+              SAFE_FEATURE_NAME=$(sanitize_template_parameter "$FEATURE_NAME" "feature_name")
+              SAFE_DESCRIPTION=$(sanitize_template_parameter "$FEATURE_DESCRIPTION" "text")
+              SAFE_PROVIDER_VERSION=$(sanitize_template_parameter "${{ inputs.provider_version || 'latest' }}" "version")
+              DISCOVERY_DATE=$(get_iso_timestamp)
 
               if ! ERROR_OUTPUT=$(gh issue create \
                 --template .github/ISSUE_TEMPLATE/new-secrets-feature.md \
@@ -426,26 +505,48 @@ jobs:
 
                 echo "⚠️ Failed to create feature issue - storing in tracker for manual creation"
 
-                # Update tracker with failed issue details
-                TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
-                TEMP_FILE=$(mktemp)
+                # Transactional update of tracker with failed issue details
+                update_failed_issue_stats() {
+                  local issue_type="$1"
+                  local issue_title="$2"
+                  local issue_labels="$3"
+                  local issue_assignee="$4"
+                  local error_msg="$5"
 
-                jq --arg type "feature" \
-                   --arg title "feat: Add support for $SAFE_FEATURE_NAME" \
-                   --arg labels "enhancement,aws-provider-update,auto-discovered" \
-                   --arg assignee "$ASSIGNEE" \
-                   --arg error "$ERROR_OUTPUT" \
-                   --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-                   '.failed_issues += [{
-                     "type": $type,
-                     "title": $title,
-                     "labels": $labels,
-                     "assignee": $assignee,
-                     "error_message": $error,
-                     "failure_timestamp": $timestamp,
-                     "retry_count": 0
-                   }] | .statistics.total_failed_issues += 1' \
-                   "$TRACKER_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$TRACKER_FILE"
+                  local TRACKER_FILE=".github/feature-tracker/secrets-manager-features.json"
+                  local TEMP_FILE=$(mktemp)
+                  local FAILURE_TIMESTAMP=$(get_iso_timestamp)
+
+                  # Atomically update both failed_issues array and statistics
+                  if jq --arg type "$issue_type" \
+                        --arg title "$issue_title" \
+                        --arg labels "$issue_labels" \
+                        --arg assignee "$issue_assignee" \
+                        --arg error "$error_msg" \
+                        --arg timestamp "$FAILURE_TIMESTAMP" \
+                        '
+                        .failed_issues += [{
+                          "type": $type,
+                          "title": $title,
+                          "labels": $labels,
+                          "assignee": $assignee,
+                          "error_message": $error,
+                          "failure_timestamp": $timestamp,
+                          "retry_count": 0
+                        }] |
+                        .statistics.total_failed_issues += 1 |
+                        .statistics.last_failure_timestamp = $timestamp
+                        ' "$TRACKER_FILE" > "$TEMP_FILE"; then
+                    mv "$TEMP_FILE" "$TRACKER_FILE"
+                    echo "✅ Updated failed issue statistics"
+                  else
+                    echo "❌ Failed to update tracker statistics"
+                    rm -f "$TEMP_FILE"
+                  fi
+                }
+
+                update_failed_issue_stats "feature" "feat: Add support for $SAFE_FEATURE_NAME" \
+                  "enhancement,aws-provider-update,auto-discovered" "$ASSIGNEE" "$ERROR_OUTPUT"
               fi
             fi
 
@@ -565,16 +666,61 @@ jobs:
         run: |
           set -euo pipefail
 
-          # File locking for atomic operations
-          LOCK_FILE=".github/feature-tracker/.lock"
-          exec 200>"$LOCK_FILE"
+          # Lease-based file locking with timeout protection
+          acquire_tracker_lock() {
+            local LOCK_FILE=".github/feature-tracker/.lock"
+            local LOCK_TIMEOUT=300  # 5 minutes
+            local LEASE_DURATION=600  # 10 minutes
+            local CURRENT_TIME=$(date +%s)
 
-          if ! flock -n 200; then
-            echo "⚠️ Another instance is updating the tracker, waiting..."
-            flock 200  # Wait for lock
+            # Check if lock file exists and is still valid
+            if [ -f "$LOCK_FILE" ]; then
+              local LOCK_TIME=$(cat "$LOCK_FILE" 2>/dev/null || echo "0")
+              local LOCK_AGE=$((CURRENT_TIME - LOCK_TIME))
+
+              if [ "$LOCK_AGE" -lt "$LEASE_DURATION" ]; then
+                echo "⚠️ Lock is still valid (age: ${LOCK_AGE}s), waiting with timeout..."
+
+                # Wait for lock with timeout
+                local WAIT_TIME=0
+                while [ -f "$LOCK_FILE" ] && [ "$WAIT_TIME" -lt "$LOCK_TIMEOUT" ]; do
+                  sleep 5
+                  WAIT_TIME=$((WAIT_TIME + 5))
+
+                  # Check if lock expired during wait
+                  if [ -f "$LOCK_FILE" ]; then
+                    LOCK_TIME=$(cat "$LOCK_FILE" 2>/dev/null || echo "0")
+                    LOCK_AGE=$(($(date +%s) - LOCK_TIME))
+                    if [ "$LOCK_AGE" -ge "$LEASE_DURATION" ]; then
+                      echo "🔓 Lock expired during wait, claiming it"
+                      break
+                    fi
+                  fi
+                done
+
+                if [ "$WAIT_TIME" -ge "$LOCK_TIMEOUT" ]; then
+                  echo "❌ Timeout waiting for lock after ${LOCK_TIMEOUT}s"
+                  return 1
+                fi
+              else
+                echo "🔓 Found expired lock (age: ${LOCK_AGE}s), claiming it"
+              fi
+            fi
+
+            # Acquire lock by writing current timestamp
+            echo "$CURRENT_TIME" > "$LOCK_FILE"
+            echo "🔒 Acquired tracker lock (lease expires in ${LEASE_DURATION}s)"
+
+            # Set trap to release lock on exit
+            trap 'rm -f "$LOCK_FILE" 2>/dev/null || true' EXIT
+            return 0
+          }
+
+          # Acquire lock before proceeding
+          if ! acquire_tracker_lock; then
+            echo "❌ Failed to acquire tracker lock, aborting updates"
+            exit 1
           fi
-
-          echo "🔒 Acquired file lock for tracker updates"
 
           # Check if there are changes to commit
           if git diff --quiet .github/feature-tracker/; then
