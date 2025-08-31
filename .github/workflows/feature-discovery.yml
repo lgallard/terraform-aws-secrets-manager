@@ -39,8 +39,42 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Validate workflow inputs
+        run: |
+          set -euo pipefail
+
+          # Validate provider_version parameter
+          PROVIDER_VERSION="${{ inputs.provider_version || 'latest' }}"
+          if [[ ! "$PROVIDER_VERSION" =~ ^(latest|[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "❌ Invalid provider_version format: '$PROVIDER_VERSION'"
+            echo "Expected: 'latest' or semantic version (e.g., '5.82.0')"
+            exit 1
+          fi
+
+          # Validate boolean inputs
+          DRY_RUN="${{ inputs.dry_run }}"
+          if [[ ! "$DRY_RUN" =~ ^(true|false)$ ]]; then
+            echo "❌ Invalid dry_run value: '$DRY_RUN'"
+            echo "Expected: 'true' or 'false'"
+            exit 1
+          fi
+
+          FORCE_SCAN="${{ inputs.force_scan }}"
+          if [[ ! "$FORCE_SCAN" =~ ^(true|false)$ ]]; then
+            echo "❌ Invalid force_scan value: '$FORCE_SCAN'"
+            echo "Expected: 'true' or 'false'"
+            exit 1
+          fi
+
+          echo "✅ All workflow inputs validated successfully"
+          echo "- Provider version: $PROVIDER_VERSION"
+          echo "- Dry run mode: $DRY_RUN"
+          echo "- Force scan: $FORCE_SCAN"
+
       - name: Validate repository hygiene
         run: |
+          set -euo pipefail
+
           # Check for prohibited files that should never be committed
           PROHIBITED_FILES=""
 
@@ -56,6 +90,11 @@ jobs:
             PROHIBITED_FILES="$PROHIBITED_FILES\n- Environment files (.env*)"
           fi
 
+          # Check for accidentally committed secrets
+          if find . -name "*.pem" -o -name "*.key" -o -name "*_rsa*" | grep -v "./.git/" | head -1 | grep -q .; then
+            PROHIBITED_FILES="$PROHIBITED_FILES\n- Private keys or certificates (*.pem, *.key, *_rsa*)"
+          fi
+
           if [ -n "$PROHIBITED_FILES" ]; then
             echo "❌ Repository hygiene check failed!"
             echo "The following prohibited files were found:"
@@ -69,11 +108,21 @@ jobs:
 
       - name: Create feature tracker directory
         run: |
-          mkdir -p .github/feature-tracker
+          set -euo pipefail
 
-          # Create initial tracker file if it doesn't exist
+          # Create directory with error handling
+          if ! mkdir -p .github/feature-tracker; then
+            echo "❌ Failed to create feature tracker directory"
+            exit 1
+          fi
+
+          # Create initial tracker file if it doesn't exist (atomic creation)
           if [ ! -f .github/feature-tracker/secrets-manager-features.json ]; then
-            cat > .github/feature-tracker/secrets-manager-features.json << 'EOF'
+            # Create temporary file for atomic write
+            TEMP_FILE=$(mktemp)
+
+            # Write content to temporary file
+            cat > "$TEMP_FILE" << 'EOF'
           {
             "last_scan": "1970-01-01T00:00:00Z",
             "provider_version": "0.0.0",
@@ -82,7 +131,15 @@ jobs:
             "issues_created": []
           }
           EOF
-            echo "Created initial feature tracker file"
+
+            # Atomic move to final location
+            if ! mv "$TEMP_FILE" .github/feature-tracker/secrets-manager-features.json; then
+              echo "❌ Failed to create feature tracker file"
+              rm -f "$TEMP_FILE"
+              exit 1
+            fi
+
+            echo "✅ Created initial feature tracker file"
           fi
 
       - name: Run Claude Code Feature Discovery
@@ -276,28 +333,50 @@ jobs:
 
           # Check if there are changes to commit
           if git diff --quiet .github/feature-tracker/; then
-            echo "No changes to feature tracker detected"
+            echo "✅ No changes to feature tracker detected"
             exit 0
           fi
 
-          # Configure git
-          git config --global user.name "Secrets Manager Feature Discovery Bot"
-          git config --global user.email "actions@github.com"
+          # Prepare secure commit message variables
+          SCAN_TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          PROVIDER_VERSION="${{ inputs.provider_version || 'latest' }}"
 
-          # Commit changes
-          git add .github/feature-tracker/
-          git commit -m "chore: update Secrets Manager feature discovery tracker
+          # Configure git with error handling
+          if ! git config --global user.name "Secrets Manager Feature Discovery Bot"; then
+            echo "❌ Failed to configure git user name"
+            exit 1
+          fi
+
+          if ! git config --global user.email "actions@github.com"; then
+            echo "❌ Failed to configure git user email"
+            exit 1
+          fi
+
+          # Add changes with error handling
+          if ! git add .github/feature-tracker/; then
+            echo "❌ Failed to stage feature tracker changes"
+            exit 1
+          fi
+
+          # Commit changes with secure message
+          if ! git commit -m "chore: update Secrets Manager feature discovery tracker
 
           - Updated feature tracking database
-          - Scan completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          - Provider version: ${{ inputs.provider_version || 'latest' }}
+          - Scan completed: ${SCAN_TIMESTAMP}
+          - Provider version: ${PROVIDER_VERSION}
 
-          [skip ci]"
+          [skip ci]"; then
+            echo "❌ Failed to commit feature tracker changes"
+            exit 1
+          fi
 
-          # Push changes
-          git push origin HEAD
+          # Push changes with error handling
+          if ! git push origin HEAD; then
+            echo "❌ Failed to push feature tracker changes"
+            exit 1
+          fi
 
-          echo "Feature tracker updated successfully"
+          echo "✅ Feature tracker updated successfully"
 
       - name: Workflow Summary
         if: always()
