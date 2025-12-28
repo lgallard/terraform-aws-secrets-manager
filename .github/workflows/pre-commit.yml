@@ -40,7 +40,13 @@ jobs:
 
       - name: Install tflint
         run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          # Use GitHub releases with verified download for security
+          TFLINT_VERSION="v0.54.0"
+          wget -q -O tflint.zip "https://github.com/terraform-linters/tflint/releases/download/${TFLINT_VERSION}/tflint_linux_amd64.zip"
+          unzip -q tflint.zip
+          sudo install tflint /usr/local/bin/
+          rm -f tflint.zip tflint
+          tflint --version
 
       - name: Install pre-commit
         run: |
@@ -62,15 +68,27 @@ jobs:
         env:
           SKIP: terraform_docs
         run: |
+          set -euo pipefail
+
           if [ "${{ github.event_name }}" == "push" ]; then
+            echo "Running pre-commit on all files for push event"
             pre-commit run --all-files
           else
-            git fetch origin ${{ github.base_ref }}
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.tf' '*.tfvars')
+            echo "Running pre-commit on changed files for pull request"
+
+            # Fetch base branch with error handling
+            if ! git fetch origin "${{ github.base_ref }}"; then
+              echo "Error: Failed to fetch base branch '${{ github.base_ref }}'"
+              exit 1
+            fi
+
+            # Get changed files excluding deleted ones
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.tf' '*.tfvars' || true)
+
             if [ -n "$CHANGED_FILES" ]; then
-              echo "Running pre-commit on changed files:"
+              echo "Running pre-commit on changed Terraform files:"
               echo "$CHANGED_FILES"
-              pre-commit run --files $CHANGED_FILES
+              echo "$CHANGED_FILES" | xargs -r pre-commit run --files
             else
               echo "No Terraform files changed, skipping pre-commit checks"
             fi
