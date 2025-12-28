@@ -5,6 +5,13 @@
 
 * replicate security-hardened Claude Code Review workflow with PR focus ([#126](https://github.com/lgallard/terraform-aws-secrets-manager/issues/126)) ([a3e9803](https://github.com/lgallard/terraform-aws-secrets-manager/commit/a3e98038376bd2f32956ababb7c7a3e13255a645))
 
+## [0.24.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.23.0...0.24.0) (2025-12-28)
+
+
+### Features
+
+* Add automated Secrets Manager feature discovery ([#145](https://github.com/lgallard/terraform-aws-secrets-manager/issues/145)) ([8eb91da](https://github.com/lgallard/terraform-aws-secrets-manager/commit/8eb91da3b9a2cc9d1b1c0c751c136dbc83fc04ad))
+
 ## [0.23.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.22.0...0.23.0) (2025-08-10)
 
 
