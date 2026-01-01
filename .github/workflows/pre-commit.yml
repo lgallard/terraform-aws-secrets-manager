@@ -36,7 +36,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.3.0'
+          terraform_version: '1.11.0'
 
       - name: Install tflint
         run: |
@@ -62,11 +62,12 @@ jobs:
       - name: Install pre-commit hooks
         run: pre-commit install-hooks
 
-      # Skip terraform_docs in CI - rely on local pre-commit + AI review
-      # This eliminates environment parity issues between macOS and Linux
+      # Skip terraform_docs and detect-aws-credentials in CI
+      # - terraform_docs: rely on local pre-commit + AI review
+      # - detect-aws-credentials: false positives without AWS creds in CI
       - name: Run pre-commit checks
         env:
-          SKIP: terraform_docs
+          SKIP: terraform_docs,detect-aws-credentials
         run: |
           set -euo pipefail
 
