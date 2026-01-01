@@ -6,15 +6,15 @@ module "secrets_manager" {
 
   # Enhanced tagging strategy
   default_tags = {
-    Environment  = "production"
-    ManagedBy    = "terraform"
-    Project      = "secrets-management"
-    Owner        = "platform-team"
+    Environment = "production"
+    ManagedBy   = "terraform"
+    Project     = "secrets-management"
+    Owner       = "platform-team"
   }
 
   tags = {
-    Module    = "secrets-manager"
-    Version   = "v1.0"
+    Module  = "secrets-manager"
+    Version = "v1.0"
   }
 
   # Regular secrets with comprehensive configuration
@@ -43,8 +43,8 @@ module "secrets_manager" {
     }
 
     api_key = {
-      name_prefix = "production/api/"
-      description = "Third-party API key"
+      name_prefix   = "production/api/"
+      description   = "Third-party API key"
       secret_string = "api-key-value-here"
       tags = {
         SecretType = "api-key"
@@ -53,9 +53,9 @@ module "secrets_manager" {
     }
 
     ssl_certificate = {
-      name           = "production/ssl/certificate"
-      description    = "SSL certificate for production domain"
-      secret_binary  = file("${path.module}/certificate.pem")
+      name          = "production/ssl/certificate"
+      description   = "SSL certificate for production domain"
+      secret_binary = file("${path.module}/certificate.pem")
       tags = {
         SecretType = "certificate"
         Domain     = "example.com"
@@ -68,8 +68,8 @@ module "secrets_manager" {
     database_password = {
       name                     = "production/database/rotating-password"
       description              = "Auto-rotating database password"
-      secret_string           = "initial-password"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:rotate-db-password"
+      secret_string            = "initial-password"
+      rotation_lambda_arn      = "arn:aws:lambda:us-east-1:123456789012:function:rotate-db-password"
       automatically_after_days = 30
       tags = {
         SecretType = "rotating-password"
@@ -95,10 +95,10 @@ module "secrets_manager" {
 output "all_secret_information" {
   description = "Complete information about all secrets"
   value = {
-    secrets         = module.secrets_manager.secrets
-    rotate_secrets  = module.secrets_manager.rotate_secrets
+    secrets          = module.secrets_manager.secrets
+    rotate_secrets   = module.secrets_manager.rotate_secrets
     existing_secrets = module.secrets_manager.existing_secrets
-    all_arns        = module.secrets_manager.all_secret_arns
+    all_arns         = module.secrets_manager.all_secret_arns
   }
   sensitive = true
 }
@@ -107,8 +107,8 @@ output "secret_references_for_other_resources" {
   description = "Secret ARNs for use in other resources like IAM policies"
   value = {
     database_secret_arn = module.secrets_manager.secret_arns["database_credentials"]
-    api_key_arn        = module.secrets_manager.secrets["api_key"].arn
-    all_secret_arns    = module.secrets_manager.all_secret_arns
+    api_key_arn         = module.secrets_manager.secrets["api_key"].arn
+    all_secret_arns     = module.secrets_manager.all_secret_arns
   }
 }
 

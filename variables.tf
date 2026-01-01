@@ -219,7 +219,7 @@ variable "existing_secrets" {
 
   validation {
     condition = alltrue([
-      for k, v in var.existing_secrets : 
+      for k, v in var.existing_secrets :
       can(regex("^(arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:[a-zA-Z0-9/_+=.@-]+|[a-zA-Z0-9/_+=.@-]+)$", v))
     ])
     error_message = "Existing secret values must be valid secret names or ARNs."

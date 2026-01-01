@@ -48,9 +48,9 @@ locals {
   # Helper function to compute secret values based on ephemeral mode - reduces code duplication
   compute_secret_values = {
     for config_name, config_map in {
-      "secrets" = local.secrets_config,
+      "secrets"        = local.secrets_config,
       "rotate_secrets" = local.rotate_secrets_config
-    } : config_name => {
+      } : config_name => {
       for k, v in config_map : k => {
         # Regular parameters (when ephemeral is disabled)
         secret_string = !var.ephemeral ? (
@@ -60,14 +60,14 @@ locals {
         secret_binary = !var.ephemeral ? (
           v.secret_binary != null ? base64encode(v.secret_binary) : null
         ) : null
-        
+
         # Write-only parameters (when ephemeral is enabled)
         secret_string_wo = var.ephemeral ? (
           v.secret_string != null ? v.secret_string :
           (v.secret_key_value != null ? jsonencode(v.secret_key_value) :
           (v.secret_binary != null ? base64encode(v.secret_binary) : null))
         ) : null
-        
+
         secret_string_wo_version = var.ephemeral ? v.secret_string_wo_version : null
       }
     }
@@ -84,7 +84,7 @@ resource "aws_secretsmanager_secret" "sm" {
   force_overwrite_replica_secret = local.secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.secrets_config[each.key].recovery_window_in_days
   tags                           = merge(var.default_tags, var.tags, local.secrets_config[each.key].tags)
-  
+
   dynamic "replica" {
     for_each = local.secrets_config[each.key].replica_regions
     content {

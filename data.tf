@@ -3,7 +3,7 @@
 
 data "aws_secretsmanager_secret" "existing" {
   for_each = var.existing_secrets
-  
+
   # Handle both ARN and name formats
   arn  = can(regex("^arn:", each.value)) ? each.value : null
   name = can(regex("^arn:", each.value)) ? null : each.value
