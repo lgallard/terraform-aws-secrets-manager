@@ -94,7 +94,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
   for_each = var.db_users
 
   secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
-  
+
   # Using write-only parameter with ephemeral value
   secret_string_wo = jsonencode({
     username = each.key
@@ -104,7 +104,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
     engine   = "postgres"
     dbname   = var.app_name
   })
-  
+
   secret_string_wo_version = 1
 }
 
@@ -136,7 +136,7 @@ ephemeral "random_password" "db_passwords" {
 # Individual module for admin user
 module "db_admin_secret" {
   source = "lgallard/secrets-manager/aws"
-  
+
   ephemeral = true
 
   rotate_secrets = {
@@ -155,10 +155,10 @@ module "db_admin_secret" {
   }
 }
 
-# Individual module for app user  
+# Individual module for app user
 module "db_app_secret" {
   source = "lgallard/secrets-manager/aws"
-  
+
   ephemeral = true
 
   rotate_secrets = {
@@ -185,7 +185,7 @@ Create a specialized version where secret names are not dynamic:
 ```hcl
 module "ephemeral_db_secrets" {
   source = "lgallard/secrets-manager/aws"
-  
+
   ephemeral = true
 
   rotate_secrets = {
@@ -198,7 +198,7 @@ module "ephemeral_db_secrets" {
       secret_string_wo_version = 1
     }
     "db-app" = {
-      description = "Database app credentials"  
+      description = "Database app credentials"
       secret_key_value = {
         username = "app"
         password = ephemeral.random_password.db_passwords["app"].result
@@ -212,7 +212,7 @@ module "ephemeral_db_secrets" {
 ## Key Points
 
 1. ✅ **Our module DOES support ephemeral mode** - The `ephemeral = true` parameter works correctly
-2. ✅ **Write-only parameters work** - `secret_string_wo_version` prevents state storage  
+2. ✅ **Write-only parameters work** - `secret_string_wo_version` prevents state storage
 3. ❌ **Dynamic for_each with ephemeral values is impossible** - This is a Terraform core limitation
 4. ✅ **Direct resource usage is the best workaround** - Gives full control and flexibility
 5. ✅ **Individual module instances work** - Good for small, known sets of secrets
@@ -222,7 +222,7 @@ module "ephemeral_db_secrets" {
 If you're currently using the pattern that doesn't work:
 
 1. **For dynamic secrets**: Use **Solution 1** (direct resources)
-2. **For small, known sets**: Use **Solution 2** (individual modules)  
+2. **For small, known sets**: Use **Solution 2** (individual modules)
 3. **For static configurations**: Use **Solution 3** (pre-defined keys)
 
 ## Version Requirements
@@ -234,6 +234,6 @@ If you're currently using the pattern that doesn't work:
 ## State Security
 
 All solutions properly prevent sensitive data from being stored in Terraform state by using:
-- `secret_string_wo` (write-only parameter)  
+- `secret_string_wo` (write-only parameter)
 - `secret_string_wo_version` (version control for ephemeral updates)
 - `ephemeral = true` (module-level ephemeral mode)

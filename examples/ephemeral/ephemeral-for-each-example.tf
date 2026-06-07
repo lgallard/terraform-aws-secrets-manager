@@ -4,7 +4,7 @@
 # https://github.com/lgallard/terraform-aws-secrets-manager/issues/80
 #
 # The user wanted to use ephemeral random_password resources with for_each patterns.
-# While the exact module pattern doesn't work due to Terraform limitations, 
+# While the exact module pattern doesn't work due to Terraform limitations,
 # this direct AWS resources approach provides the same functionality and security.
 
 # Variables matching the user's original setup

@@ -151,12 +151,12 @@ data "aws_iam_policy_document" "secret_policy" {
   statement {
     sid    = "AllowApplicationAccess"
     effect = "Allow"
-    
+
     principals {
       type        = "AWS"
       identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
     }
-    
+
     actions   = ["secretsmanager:GetSecretValue"]
     resources = ["*"]
   }
@@ -189,12 +189,12 @@ module "secrets-manager-replication" {
     global-config = {
       description   = "Global configuration replicated across regions"
       secret_string = "global-configuration-data"
-      
+
       replica_regions = {
         "us-west-2" = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
         "eu-west-1" = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
       }
-      
+
       force_overwrite_replica_secret = true
       recovery_window_in_days        = 7
     }
@@ -357,7 +357,7 @@ module "secrets-manager-mixed" {
       recovery_window_in_days = 7
       secret_string           = "This is a plain text secret"
     }
-    
+
     key-value-secret = {
       description = "A key/value secret for database credentials"
       secret_key_value = {
@@ -372,7 +372,7 @@ module "secrets-manager-mixed" {
         Type = "database"
       }
     }
-    
+
     binary-secret = {
       description   = "SSH private key"
       secret_binary = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC..."
@@ -404,7 +404,7 @@ This module includes comprehensive input validation to prevent configuration err
 - Must be 0 (immediate deletion) or between 7-30 days
 - Default: 30 days
 
-### Rotation Frequency  
+### Rotation Frequency
 - Must be between 1-365 days for `automatically_after_days`
 - Default: 30 days
 

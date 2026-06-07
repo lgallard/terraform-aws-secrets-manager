@@ -47,7 +47,7 @@ module "secrets-manager-4" {
 #   version = "5.2.0"
 #
 #   filename         = "secrets_manager_rotation.zip"
-#   function_name    = "secrets-manager-rotation"  
+#   function_name    = "secrets-manager-rotation"
 #   handler          = "secrets_manager_rotation.lambda_handler"
 #   runtime          = "python3.7"
 #   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")

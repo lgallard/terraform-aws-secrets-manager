@@ -114,9 +114,9 @@ module "ephemeral_secrets_v2" {
 # Example: Using with ephemeral resources (commented out as it requires Terraform 1.11+)
 # module "ephemeral_with_random" {
 #   source = "../../"
-#   
+#
 #   ephemeral = true
-#   
+#
 #   secrets = {
 #     random_password = {
 #       description = "Random password (ephemeral)"

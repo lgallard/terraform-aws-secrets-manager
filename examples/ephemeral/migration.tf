@@ -4,13 +4,13 @@
 # BEFORE: Regular secrets (stored in state)
 # module "secrets_before" {
 #   source = "../../"
-#   
+#
 #   secrets = {
 #     database_password = {
 #       description = "Database password"
 #       secret_string = var.db_password
 #     }
-#     
+#
 #     api_credentials = {
 #       description = "API credentials"
 #       secret_key_value = {

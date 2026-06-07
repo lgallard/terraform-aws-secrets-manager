@@ -34,7 +34,7 @@ module "db_users_secrets_manager" {
 ## Root Cause Analysis
 
 ### Issue 1: Version Compatibility ✅ **FIXED**
-- Module required Terraform `>= v0.15.0` 
+- Module required Terraform `>= v0.15.0`
 - Ephemeral resources need Terraform `>= 1.11.0`
 - **Solution**: Updated `versions.tf` to require `>= 1.11.0`
 
@@ -113,7 +113,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
   for_each = var.db_users
 
   secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
-  
+
   # Using write-only parameter prevents state storage
   secret_string_wo = jsonencode({
     username = each.key
@@ -123,7 +123,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
     engine   = "postgres"
     dbname   = var.app_name
   })
-  
+
   secret_string_wo_version = 1  # Required for ephemeral mode
 }
 
@@ -156,7 +156,7 @@ ephemeral "random_password" "db_passwords" {
 module "db_admin_secret" {
   source = "lgallard/secrets-manager/aws"
   version = "0.16.0"  # Use latest version
-  
+
   ephemeral = true
 
   rotate_secrets = {
@@ -179,14 +179,14 @@ module "db_admin_secret" {
 module "db_app_secret" {
   source = "lgallard/secrets-manager/aws"
   version = "0.16.0"
-  
+
   ephemeral = true
 
   rotate_secrets = {
     "db-${var.app_name}-app" = {
       description = "Database app credentials"
       secret_key_value = {
-        username = "app" 
+        username = "app"
         password = ephemeral.random_password.db_passwords["app"].result
         host     = "db.${var.app_name}.internal"
         port     = 5432
@@ -205,7 +205,7 @@ All solutions properly prevent sensitive data from being stored in Terraform sta
 
 ### ✅ State Security Features
 - **`secret_string_wo`**: Write-only parameter prevents state persistence
-- **`secret_string_wo_version`**: Version control for ephemeral updates  
+- **`secret_string_wo_version`**: Version control for ephemeral updates
 - **Ephemeral random passwords**: Never stored in state
 - **KMS encryption**: Additional layer of security
 
@@ -218,7 +218,7 @@ All solutions properly prevent sensitive data from being stored in Terraform sta
 ## Implementation Status
 
 ### ✅ Completed Changes
-1. **Fixed version requirement**: Updated to `>= 1.11.0` 
+1. **Fixed version requirement**: Updated to `>= 1.11.0`
 2. **Validated ephemeral support**: Our module's `ephemeral = true` works correctly
 3. **Tested working solutions**: Direct resources approach proven functional
 4. **Documented limitations**: Clear explanation of Terraform constraints
@@ -242,7 +242,7 @@ All solutions properly prevent sensitive data from being stored in Terraform sta
 
 **Benefits of Direct Resources approach:**
 - ✅ Full control over resource configuration
-- ✅ Works with ephemeral `for_each` patterns  
+- ✅ Works with ephemeral `for_each` patterns
 - ✅ Same security guarantees as module
 - ✅ More flexibility for custom configurations
 - ✅ No module wrapper limitations

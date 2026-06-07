@@ -20,9 +20,9 @@ To use ephemeral secrets, set `ephemeral = true` in your module configuration:
 ```hcl
 module "secrets_manager" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     db_password = {
       description = "Database password (ephemeral)"
@@ -63,9 +63,9 @@ ephemeral "random_password" "db_password" {
 # Use ephemeral password in secret
 module "secrets_manager" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     db_password = {
       description = "Database password (ephemeral)"
@@ -93,7 +93,7 @@ This configuration ensures that the password remains ephemeral throughout the en
 ```hcl
 module "secrets" {
   source = "../../"
-  
+
   secrets = {
     db_password = {
       description = "Database password"
@@ -107,9 +107,9 @@ module "secrets" {
 ```hcl
 module "secrets" {
   source = "../../"
-  
+
   ephemeral = true
-  
+
   secrets = {
     db_password = {
       description = "Database password (ephemeral)"
@@ -156,13 +156,13 @@ ephemeral "random_password" "db_passwords" {
 resource "aws_secretsmanager_secret_version" "db_secret_versions" {
   for_each = var.db_users
   secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
-  
+
   secret_string_wo = jsonencode({
     password = ephemeral.random_password.db_passwords[each.key].result
     username = each.key
     # ... other fields
   })
-  
+
   secret_string_wo_version = 1
 }
 ```
