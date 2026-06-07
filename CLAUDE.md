@@ -8,7 +8,7 @@ This document outlines Terraform-specific development guidelines for the terrafo
 ### File Organization
 - **main.tf** - Primary resource definitions and locals
 - **variables.tf** - Input variable definitions with validation
-- **outputs.tf** - Output value definitions  
+- **outputs.tf** - Output value definitions
 - **versions.tf** - Provider version constraints
 
 ### Code Organization Principles
@@ -26,7 +26,7 @@ This document outlines Terraform-specific development guidelines for the terrafo
 # Preferred: Using for_each
 resource "aws_secretsmanager_secret" "this" {
   for_each = var.enabled ? var.secrets : {}
-  
+
   name = each.value.name
   # ...
 }
@@ -63,10 +63,10 @@ locals {
   # Resource creation conditions
   should_create_secret = var.enabled && var.secret_name != null
   should_create_replica = local.should_create_secret && length(var.replica_regions) > 0
-  
+
   # Data processing
   secrets = concat(local.secret, var.secrets)
-  
+
   # Validation helpers
   rotation_requirements_met = var.rotation_enabled && var.rotation_lambda_arn != null
 }
@@ -122,7 +122,7 @@ The module supports ephemeral mode to prevent sensitive data from being stored i
 ```hcl
 module "secrets_manager" {
   source = "lgallard/secrets-manager/aws"
-  
+
   secrets = {
     database_password = {
       description   = "Database password"
@@ -136,10 +136,10 @@ module "secrets_manager" {
 ```hcl
 module "secrets_manager" {
   source = "lgallard/secrets-manager/aws"
-  
+
   # Enable ephemeral mode
   ephemeral = true
-  
+
   secrets = {
     database_password = {
       description              = "Database password (ephemeral)"
@@ -242,7 +242,7 @@ secrets = {
 ```hcl
 module "secrets" {
   source = "lgallard/secrets-manager/aws"
-  
+
   secrets = {
     database_password = {
       description   = "Database password"
@@ -256,9 +256,9 @@ module "secrets" {
 ```hcl
 module "secrets" {
   source = "lgallard/secrets-manager/aws"
-  
+
   ephemeral = true  # Enable ephemeral mode
-  
+
   secrets = {
     database_password = {
       description              = "Database password (ephemeral)"
@@ -292,7 +292,7 @@ variable "secrets" {
     secret_string_wo_version = optional(number)
     # ... other fields
   }))
-  
+
   validation {
     condition = alltrue([
       for k, v in var.secrets :
@@ -322,9 +322,9 @@ variable "database_password" {
 # Enable ephemeral mode for sensitive secrets
 module "secrets" {
   source = "lgallard/secrets-manager/aws"
-  
+
   ephemeral = true
-  
+
   secrets = {
     db_password = {
       description              = "Database password (ephemeral)"
@@ -333,7 +333,7 @@ module "secrets" {
       kms_key_id              = aws_kms_key.secrets_key.arn  # Use KMS encryption
     }
   }
-  
+
   tags = {
     Security    = "high"
     Compliance  = "required"
@@ -354,9 +354,9 @@ ephemeral "random_password" "db_password" {
 # Use ephemeral password in secret
 module "secrets_manager" {
   source = "lgallard/secrets-manager/aws"
-  
+
   ephemeral = true
-  
+
   secrets = {
     database_password = {
       description              = "Random database password (ephemeral)"
@@ -381,14 +381,14 @@ ephemeral "random_password" "db_passwords" {
 # Create secrets directly (not through module)
 resource "aws_secretsmanager_secret_version" "db_secret_versions" {
   for_each = var.db_users
-  
+
   secret_id = aws_secretsmanager_secret.db_secrets[each.key].id
-  
+
   secret_string_wo = jsonencode({
     username = each.key
     password = ephemeral.random_password.db_passwords[each.key].result
   })
-  
+
   secret_string_wo_version = 1
 }
 ```
@@ -442,7 +442,7 @@ locals {
 # Direct usage with for_each
 resource "aws_secretsmanager_secret" "sm" {
   for_each = var.secrets
-  
+
   name                           = local.secrets_config[each.key].computed_name
   name_prefix                    = local.secrets_config[each.key].computed_name_prefix
   description                    = local.secrets_config[each.key].description
@@ -455,13 +455,13 @@ resource "aws_secretsmanager_secret" "sm" {
 # Example: Creating multiple secret replicas
 resource "aws_secretsmanager_secret_replica" "this" {
   for_each = {
-    for idx, replica in var.secret_replicas : 
+    for idx, replica in var.secret_replicas :
     "${replica.region}_${idx}" => replica
   }
-  
+
   secret_id = aws_secretsmanager_secret.this[each.value.secret_name].id
   region    = each.value.region
-  
+
   kms_key_id = try(each.value.kms_key_id, null)
 }
 ```
@@ -501,7 +501,7 @@ resource "aws_secretsmanager_secret_replica" "this" {
 # Example provider configuration
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"

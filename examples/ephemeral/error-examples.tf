@@ -5,9 +5,9 @@
 # This will fail validation
 # module "error_missing_version" {
 #   source = "../../"
-#   
+#
 #   ephemeral = true
-#   
+#
 #   secrets = {
 #     bad_secret = {
 #       description = "This will fail - missing secret_string_wo_version"
@@ -37,9 +37,9 @@ module "correct_version" {
 # This will fail validation
 # module "error_invalid_version" {
 #   source = "../../"
-#   
+#
 #   ephemeral = true
-#   
+#
 #   secrets = {
 #     bad_version = {
 #       description = "This will fail - invalid version value"
@@ -54,9 +54,9 @@ module "correct_version" {
 # This will fail validation
 # module "error_conflicting_versions" {
 #   source = "../../"
-#   
+#
 #   ephemeral = true
-#   
+#
 #   secrets = {
 #     conflicting_secret = {
 #       description = "This will fail - conflicting version parameters"

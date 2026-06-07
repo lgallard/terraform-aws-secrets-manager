@@ -4,9 +4,9 @@
 # This should fail validation - missing secret_string_wo_version
 # module "validation_test_fail" {
 #   source = "../../"
-#   
+#
 #   ephemeral = true
-#   
+#
 #   secrets = {
 #     invalid_secret = {
 #       description = "This should fail validation"
