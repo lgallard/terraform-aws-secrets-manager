@@ -12,5 +12,9 @@ repos:
   rev: v1.62.3 # Get the latest from: https://github.com/antonbabenko/pre-commit-terraform/releases
   hooks:
     - id: terraform_fmt
+    - id: terraform_tflint
+      # The complete example references a demo certificate file that is not
+      # committed, matching the existing terraform_validate CI skip rationale.
+      exclude: ^examples/complete/
     - id: terraform_validate
     - id: terraform_docs

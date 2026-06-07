@@ -6,13 +6,17 @@ on:
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '.tflint.hcl'
       - '.pre-commit-config.yaml'
+      - '.github/workflows/pre-commit.yml'
   push:
     branches: [master]
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '.tflint.hcl'
       - '.pre-commit-config.yaml'
+      - '.github/workflows/pre-commit.yml'
 
 jobs:
   pre-commit:
@@ -47,6 +51,7 @@ jobs:
           sudo install tflint /usr/local/bin/
           rm -f tflint.zip tflint
           tflint --version
+          tflint --init
 
       - name: Install pre-commit
         run: |
@@ -86,8 +91,19 @@ jobs:
 
             # Get changed files excluding deleted ones
             CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.tf' '*.tfvars' || true)
+            CONFIG_FILES=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '.tflint.hcl' '.pre-commit-config.yaml' || true)
 
-            if [ -n "$CHANGED_FILES" ]; then
+            if [ -n "$CONFIG_FILES" ]; then
+              echo "TFLint or pre-commit configuration changed; checking config files and running TFLint across Terraform files"
+              echo "$CONFIG_FILES"
+              echo "$CONFIG_FILES" | xargs -r pre-commit run --files
+              pre-commit run terraform_tflint --all-files
+              if [ -n "$CHANGED_FILES" ]; then
+                echo "Running remaining pre-commit checks on changed Terraform files:"
+                echo "$CHANGED_FILES"
+                echo "$CHANGED_FILES" | xargs -r pre-commit run --files
+              fi
+            elif [ -n "$CHANGED_FILES" ]; then
               echo "Running pre-commit on changed Terraform files:"
               echo "$CHANGED_FILES"
               echo "$CHANGED_FILES" | xargs -r pre-commit run --files
