@@ -548,13 +548,13 @@ Successfully moved 1 object(s).
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 2.67.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.4.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.50.0 |
 
 ## Modules
 
@@ -571,13 +571,17 @@ No modules.
 | [aws_secretsmanager_secret_version.rsm-svu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.sm-sv](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.sm-svu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
+| [aws_secretsmanager_secret.existing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret) | data source |
+| [aws_secretsmanager_secret_version.existing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret_version) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. Must be between 1 and 365 days. Example: 30 | `number` | `30` | no |
+| <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to apply to all resources. These are merged with resource-specific tags. Example: { Environment = "prod", ManagedBy = "terraform" } | `map(string)` | `{}` | no |
 | <a name="input_ephemeral"></a> [ephemeral](#input\_ephemeral) | Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (\_wo) and are not persisted to state. Example: true | `bool` | `false` | no |
+| <a name="input_existing_secrets"></a> [existing\_secrets](#input\_existing\_secrets) | Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing\_secret = "arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret" } | `map(string)` | `{}` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
 | <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
@@ -589,8 +593,17 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_all_secret_arns"></a> [all\_secret\_arns](#output\_all\_secret\_arns) | List of all secret ARNs (both regular and rotating) for easy reference in IAM policies. |
+| <a name="output_existing_secret_versions"></a> [existing\_secret\_versions](#output\_existing\_secret\_versions) | Map of existing secret versions with their current values and metadata. |
+| <a name="output_existing_secrets"></a> [existing\_secrets](#output\_existing\_secrets) | Map of existing secrets referenced as data sources with their complete attributes. |
 | <a name="output_rotate_secret_arns"></a> [rotate\_secret\_arns](#output\_rotate\_secret\_arns) | Map of rotating secret names to their ARNs. Use these ARNs to grant permissions or reference rotating secrets in IAM policies and other AWS resources. |
 | <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
+| <a name="output_rotate_secret_versions"></a> [rotate\_secret\_versions](#output\_rotate\_secret\_versions) | Map of managed rotating secret versions with their ARNs and version information. |
+| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, and rotation information. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
+| <a name="output_secret_rotations"></a> [secret\_rotations](#output\_secret\_rotations) | Map of secret rotation configurations with Lambda ARN and rotation schedule information. |
+| <a name="output_secret_versions"></a> [secret\_versions](#output\_secret\_versions) | Map of managed secret versions with their ARNs and version information. |
+| <a name="output_secrets"></a> [secrets](#output\_secrets) | Complete map of regular secrets with all attributes including ARNs, names, KMS keys, descriptions, and replica information. |
+| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

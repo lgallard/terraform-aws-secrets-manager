@@ -55,8 +55,9 @@ output "rotate_secrets" {
 output "secret_versions" {
   description = "Map of managed secret versions with their ARNs and version information."
   value = var.unmanaged ? {} : { for k, v in aws_secretsmanager_secret_version.sm-sv : k => {
-    arn            = v.arn
+    arn            = v.secret_arn
     id             = v.id
+    secret_arn     = v.secret_arn
     secret_id      = v.secret_id
     version_id     = v.version_id
     version_stages = v.version_stages
@@ -66,8 +67,9 @@ output "secret_versions" {
 output "rotate_secret_versions" {
   description = "Map of managed rotating secret versions with their ARNs and version information."
   value = var.unmanaged ? {} : { for k, v in aws_secretsmanager_secret_version.rsm-sv : k => {
-    arn            = v.arn
+    arn            = v.secret_arn
     id             = v.id
+    secret_arn     = v.secret_arn
     secret_id      = v.secret_id
     version_id     = v.version_id
     version_stages = v.version_stages
@@ -123,8 +125,9 @@ output "existing_secrets" {
 output "existing_secret_versions" {
   description = "Map of existing secret versions with their current values and metadata."
   value = length(var.existing_secrets) > 0 ? { for k, v in data.aws_secretsmanager_secret_version.existing : k => {
-    arn            = v.arn
+    arn            = v.secret_arn
     id             = v.id
+    secret_arn     = v.secret_arn
     secret_id      = v.secret_id
     version_id     = v.version_id
     version_stages = v.version_stages
