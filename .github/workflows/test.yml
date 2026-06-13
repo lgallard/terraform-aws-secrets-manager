@@ -26,6 +26,15 @@ env:
 jobs:
   validate:
     name: Validate
+    if: >-
+      ${{
+        !(
+          (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore: release ')) ||
+          (github.event_name == 'pull_request' &&
+            github.event.pull_request.user.login == 'github-actions[bot]' &&
+            startsWith(github.event.pull_request.title, 'chore: release '))
+        )
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
