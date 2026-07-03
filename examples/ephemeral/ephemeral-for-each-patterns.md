@@ -237,7 +237,7 @@ All solutions properly prevent sensitive data from being stored in Terraform sta
 **For the user who reported this issue:**
 
 1. **Use Solution 1 (Direct Resources)** - Provides exactly the functionality you want
-2. **Update to module version 0.16.0+** when released (includes version fix)
+2. **Use module version 0.16.0+** for ephemeral password support
 3. **Ensure Terraform >= 1.11.0** for ephemeral resource support
 
 **Benefits of Direct Resources approach:**
@@ -250,7 +250,7 @@ All solutions properly prevent sensitive data from being stored in Terraform sta
 ## Version Requirements
 
 - **Terraform**: `>= 1.11.0` (for ephemeral resources)
-- **AWS Provider**: `>= 2.67.0`
-- **Module**: `>= 0.16.0` (when released with fixes)
+- **AWS Provider**: `>= 6.50.0`
+- **Module**: `>= 0.16.0`
 
 The ephemeral password functionality the user requested is **fully achievable** with the direct resources approach, providing the same security benefits while working within Terraform's architectural constraints.

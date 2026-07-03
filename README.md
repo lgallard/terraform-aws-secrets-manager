@@ -15,6 +15,15 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 - ✅ **Resource Policies**: Attach custom IAM policies to secrets
 - ✅ **Flexible Secret Types**: Support for plain text, key/value pairs, and binary secrets
 
+## Compatibility
+
+| Component | Minimum version | Notes |
+|-----------|-----------------|-------|
+| Terraform | `>= 1.11.0` | Required for ephemeral resources and write-only arguments. |
+| AWS provider | `>= 6.50.0` | Required so the module can use `aws_secretsmanager_secret_version.secret_string_wo` / `secret_string_wo_version` safely. Version 6.50.0 includes Secrets Manager fixes for final-plan consistency, creation eventual consistency, empty `version_stages`, and switching between `secret_string` and `secret_string_wo`. |
+
+The module declares the AWS provider minimum at the root, so all usage modes use the same compatibility policy. Ephemeral mode additionally requires setting `secret_string_wo_version >= 1` for every managed secret value.
+
 ## Examples
 
 Check the [examples](/examples/) folder where you can see the complete compilation of snippets.
@@ -548,13 +557,13 @@ Successfully moved 1 object(s).
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 6.50.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.50.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.53.0 |
 
 ## Modules
 
