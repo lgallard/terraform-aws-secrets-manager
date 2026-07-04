@@ -203,6 +203,10 @@ rotate_secrets = {
 }
 ```
 
+### Provider Compatibility Policy
+
+Ephemeral/write-only secret version support uses `aws_secretsmanager_secret_version.secret_string_wo` and `secret_string_wo_version`. Keep the module AWS provider constraint at `>= 6.50.0` unless a future issue deliberately revisits the policy. Provider 6.50.0 is the stability-first minimum because it includes fixes for final-plan consistency, eventual consistency on secret-version creation/read-after-create, empty `version_stages`, and switching between `secret_string` and `secret_string_wo` without unnecessary replacement.
+
 ### Version Management
 
 #### Version Control for Updates
@@ -397,7 +401,7 @@ resource "aws_secretsmanager_secret_version" "db_secret_versions" {
 
 #### Version Requirements
 - **Terraform**: >= 1.11 (for ephemeral resource support)
-- **AWS Provider**: >= 2.67.0
+- **AWS Provider**: >= 6.50.0
 - **Module**: Latest version with ephemeral support
 
 #### Backward Compatibility

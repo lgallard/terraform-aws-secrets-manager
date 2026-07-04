@@ -42,7 +42,9 @@ When using ephemeral secrets, you can control when secrets are updated by increm
 ## Requirements
 
 - Terraform >= 1.11
-- AWS Provider >= 2.67.0
+- AWS Provider >= 6.50.0
+
+The AWS provider minimum is intentionally stability-first: provider 6.50.0 includes `aws_secretsmanager_secret_version` fixes for write-only secret values, including final-plan consistency, eventual consistency during creation/read-after-create, empty `version_stages`, and switching between `secret_string` and `secret_string_wo` without unnecessary replacement.
 
 ## Benefits
 

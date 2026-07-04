@@ -228,8 +228,8 @@ If you're currently using the pattern that doesn't work:
 ## Version Requirements
 
 - **Terraform**: >= 1.11.0 (for ephemeral resources and write-only arguments)
-- **AWS Provider**: >= 2.67.0
-- **Module**: >= 0.16.0 (when released with ephemeral fixes)
+- **AWS Provider**: >= 6.50.0
+- **Module**: >= 0.16.0
 
 ## State Security
 
