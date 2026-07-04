@@ -5,6 +5,17 @@
 
 * replicate security-hardened Claude Code Review workflow with PR focus ([#126](https://github.com/lgallard/terraform-aws-secrets-manager/issues/126)) ([a3e9803](https://github.com/lgallard/terraform-aws-secrets-manager/commit/a3e98038376bd2f32956ababb7c7a3e13255a645))
 
+## [1.0.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.24.2...1.0.0) (2026-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* minimum AWS provider version is raised from >= 5.0 to >= 6.50.0. Users pinned to AWS provider 5.x must upgrade before adopting this module release.
+
+### Features
+
+* require AWS provider &gt;= 6.50.0 ([#180](https://github.com/lgallard/terraform-aws-secrets-manager/issues/180)) ([2654911](https://github.com/lgallard/terraform-aws-secrets-manager/commit/26549116b81defbe34100059b01b60917d0fe500))
+
 ## [0.24.2](https://github.com/lgallard/terraform-aws-secrets-manager/compare/0.24.1...0.24.2) (2026-06-13)
 
 
