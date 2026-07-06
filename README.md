@@ -13,6 +13,7 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 - ✅ **Cross-Region Replication**: Support for replicating secrets across AWS regions
 - ✅ **KMS Encryption**: Support for customer-managed KMS keys
 - ✅ **Resource Policies**: Attach custom IAM policies to secrets
+- ✅ **Replica Policy Propagation**: Optionally keep replica secrets' resource policies in sync with the primary
 - ✅ **Flexible Secret Types**: Support for plain text, key/value pairs, and binary secrets
 
 ## Compatibility
@@ -215,6 +216,35 @@ module "secrets-manager-replication" {
   }
 }
 ```
+
+#### Replicating the resource policy
+
+AWS Secrets Manager replication copies the secret value to replica regions, but **not** the resource policy. Set `replicate_policy = true` on a secret to have the module apply the secret's `policy` in every replica region as well — updates to the policy on the source secret then propagate to all replicas on the next apply:
+
+```hcl
+module "secrets-manager-replication" {
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    global-config = {
+      description   = "Global configuration replicated across regions"
+      secret_string = "global-configuration-data"
+
+      policy           = data.aws_iam_policy_document.secret_policy.json
+      replicate_policy = true
+
+      replica_regions = {
+        "us-west-2" = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        "eu-west-1" = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
+      }
+    }
+  }
+}
+```
+
+Because the same policy document is applied in every region, use region-agnostic statements (e.g. `resources = ["*"]`, which scopes to the attached secret) rather than hardcoding the primary secret's ARN.
+
+> **Note**: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
 
 ### Lifecycle Configuration
 
@@ -575,6 +605,7 @@ No modules.
 |------|------|
 | [aws_secretsmanager_secret.rsm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.sm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret_policy.sm-rp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_policy) | resource |
 | [aws_secretsmanager_secret_rotation.rsm-sr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
 | [aws_secretsmanager_secret_version.rsm-sv](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.rsm-svu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
@@ -611,6 +642,7 @@ No modules.
 | <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, and rotation information. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
+| <a name="output_secret_replica_policies"></a> [secret\_replica\_policies](#output\_secret\_replica\_policies) | Map of resource policies applied to replica secrets, keyed by '<secret\_key>:<replica\_region>'. Only populated for secrets with replicate\_policy enabled. |
 | <a name="output_secret_rotations"></a> [secret\_rotations](#output\_secret\_rotations) | Map of secret rotation configurations with Lambda ARN and rotation schedule information. |
 | <a name="output_secret_versions"></a> [secret\_versions](#output\_secret\_versions) | Map of managed secret versions with their ARNs and version information. |
 | <a name="output_secrets"></a> [secrets](#output\_secrets) | Complete map of regular secrets with all attributes including ARNs, names, KMS keys, descriptions, and replica information. |
