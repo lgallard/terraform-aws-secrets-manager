@@ -94,3 +94,5 @@ module "secrets-manager-6" {
 NOTE: Because the same policy document is applied in every region, use region-agnostic statements (e.g. `resources = ["*"]`, which scopes to the attached secret) rather than hardcoding the primary secret's ARN.
 
 NOTE: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
+
+NOTE: `replicate_policy` is only supported for regular `secrets`. Rotating secrets (`rotate_secrets`) currently do not support `replica_regions` at all, so there is no replica policy propagation for them.
