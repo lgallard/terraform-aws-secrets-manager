@@ -52,7 +52,7 @@ NOTE: If you leave the replica_regions with an empty map it will use the default
 
 # Replicating the resource policy
 
-AWS Secrets Manager replication copies the secret value to the replica regions, but **not** the resource policy. Set `replicate_policy = true` on a secret to have the module apply the primary secret's `policy` to every replica region, so policy updates on the source secret propagate to all replicas on the next apply.
+AWS Secrets Manager replication copies the secret value to the replica regions, but **not** the resource policy. Set `replicate_policy = true` on a regular or rotating secret to have the module apply the primary secret's `policy` to every replica region, so policy updates on the source secret propagate to all replicas on the next apply.
 
 ```
 data "aws_iam_policy_document" "secret_policy" {
@@ -95,4 +95,4 @@ NOTE: Because the same policy document is applied in every region, use region-ag
 
 NOTE: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
 
-NOTE: `replicate_policy` is only supported for regular `secrets`. Rotating secrets (`rotate_secrets`) currently do not support `replica_regions` at all, so there is no replica policy propagation for them.
+NOTE: Rotating secrets (`rotate_secrets`) support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`.

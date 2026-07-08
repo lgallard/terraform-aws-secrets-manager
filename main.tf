@@ -34,6 +34,7 @@ locals {
       recovery_window_in_days        = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
       tags                           = lookup(v, "tags", null)
       replica_regions                = lookup(v, "replica_regions", {})
+      replicate_policy               = lookup(v, "replicate_policy", false)
       secret_string                  = lookup(v, "secret_string", null)
       secret_key_value               = lookup(v, "secret_key_value", null)
       secret_binary                  = lookup(v, "secret_binary", null)
@@ -83,6 +84,20 @@ locals {
   # precondition on the resource instead).
   secret_replica_policies = merge([
     for k, v in local.secrets_config : {
+      for region in distinct([for rk, rv in v.replica_regions : try(rv.region, rk)]) :
+      "${k}:${region}" => {
+        secret_key = k
+        region     = region
+      }
+    }
+    if v.replicate_policy
+  ]...)
+
+  # Same replica policy propagation shape for rotating secrets. Keep this as a
+  # separate local/resource/output from regular secrets so existing
+  # secret_replica_policies output keys remain backward-compatible.
+  rotate_secret_replica_policies = merge([
+    for k, v in local.rotate_secrets_config : {
       for region in distinct([for rk, rv in v.replica_regions : try(rv.region, rk)]) :
       "${k}:${region}" => {
         secret_key = k
@@ -188,6 +203,35 @@ resource "aws_secretsmanager_secret" "rsm" {
   force_overwrite_replica_secret = local.rotate_secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.rotate_secrets_config[each.key].recovery_window_in_days
   tags                           = merge(var.default_tags, var.tags, local.rotate_secrets_config[each.key].tags)
+
+  dynamic "replica" {
+    for_each = local.rotate_secrets_config[each.key].replica_regions
+    content {
+      region     = try(replica.value.region, replica.key)
+      kms_key_id = try(replica.value.kms_key_id, null)
+    }
+  }
+}
+
+resource "aws_secretsmanager_secret_policy" "rsm-rp" {
+  for_each = local.rotate_secret_replica_policies
+
+  # A replica secret shares the primary secret's ARN except for the region
+  # component (arn:partition:secretsmanager:region:account:secret:name-suffix),
+  # so the replica ARN can be derived by swapping in the replica region.
+  region = each.value.region
+  secret_arn = join(":", [
+    for i, part in split(":", aws_secretsmanager_secret.rsm[each.value.secret_key].arn) :
+    i == 3 ? each.value.region : part
+  ])
+  policy = local.rotate_secrets_config[each.value.secret_key].policy
+
+  lifecycle {
+    precondition {
+      condition     = local.rotate_secrets_config[each.value.secret_key].policy != null
+      error_message = "Rotating secret \"${each.value.secret_key}\" sets replicate_policy = true but does not define a policy."
+    }
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {

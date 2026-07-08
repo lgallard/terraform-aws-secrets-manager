@@ -37,7 +37,7 @@ output "secrets" {
 }
 
 output "rotate_secrets" {
-  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, and rotation information."
+  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information."
   value = { for k, v in aws_secretsmanager_secret.rsm : k => {
     arn                     = v.arn
     id                      = v.id
@@ -48,6 +48,7 @@ output "rotate_secrets" {
     recovery_window_in_days = v.recovery_window_in_days
     tags                    = v.tags
     tags_all                = v.tags_all
+    replica                 = v.replica
   } }
 }
 
@@ -110,6 +111,15 @@ output "secrets_by_name" {
 output "secret_replica_policies" {
   description = "Map of resource policies applied to replica secrets, keyed by '<secret_key>:<replica_region>'. Only populated for secrets with replicate_policy enabled."
   value = { for k, v in aws_secretsmanager_secret_policy.sm-rp : k => {
+    id         = v.id
+    secret_arn = v.secret_arn
+    region     = v.region
+  } }
+}
+
+output "rotate_secret_replica_policies" {
+  description = "Map of resource policies applied to rotating replica secrets, keyed by '<secret_key>:<replica_region>'. Only populated for rotating secrets with replicate_policy enabled."
+  value = { for k, v in aws_secretsmanager_secret_policy.rsm-rp : k => {
     id         = v.id
     secret_arn = v.secret_arn
     region     = v.region
