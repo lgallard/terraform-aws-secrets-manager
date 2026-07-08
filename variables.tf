@@ -18,7 +18,7 @@ variable "ephemeral" {
 
 # Secrets with rotation
 variable "rotate_secrets" {
-  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Set replica_regions to replicate rotating secrets across regions, and set replicate_policy (bool, default false) to apply the secret's resource policy to all replica_regions on each apply. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
+  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Set replica_regions to replicate rotating secrets across regions, and set replicate_policy (bool, default false) to apply the secret's resource policy to all replica_regions on each apply. If replica_regions was already set on older module versions, upgrading will begin managing those replicas. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
   type        = any
   default     = {}
 

@@ -88,6 +88,24 @@ module "secrets-manager-6" {
       force_overwrite_replica_secret = true
     },
   }
+
+  rotate_secrets = {
+    rotating-secret-with-policy = {
+      description             = "Rotating secret whose resource policy is kept in sync on every replica"
+      recovery_window_in_days = 7
+      secret_string           = "This is a rotating example"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      policy                  = data.aws_iam_policy_document.secret_policy.json
+      replicate_policy        = true
+      replica_regions = {
+        us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        eu-west-1 = {
+          region     = "eu-west-1"
+          kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
+        }
+      }
+    }
+  }
 }
 ```
 
