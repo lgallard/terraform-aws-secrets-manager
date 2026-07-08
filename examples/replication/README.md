@@ -52,7 +52,7 @@ NOTE: If you leave the replica_regions with an empty map it will use the default
 
 # Replicating the resource policy
 
-AWS Secrets Manager replication copies the secret value to the replica regions, but **not** the resource policy. Set `replicate_policy = true` on a secret to have the module apply the primary secret's `policy` to every replica region, so policy updates on the source secret propagate to all replicas on the next apply.
+AWS Secrets Manager replication copies the secret value to the replica regions, but **not** the resource policy. Set `replicate_policy = true` on a regular or rotating secret to have the module apply the primary secret's `policy` to every replica region, so policy updates on the source secret propagate to all replicas on the next apply.
 
 ```
 data "aws_iam_policy_document" "secret_policy" {
@@ -88,6 +88,24 @@ module "secrets-manager-6" {
       force_overwrite_replica_secret = true
     },
   }
+
+  rotate_secrets = {
+    rotating-secret-with-policy = {
+      description             = "Rotating secret whose resource policy is kept in sync on every replica"
+      recovery_window_in_days = 7
+      secret_string           = "This is a rotating example"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      policy                  = data.aws_iam_policy_document.secret_policy.json
+      replicate_policy        = true
+      replica_regions = {
+        us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        eu-west-1 = {
+          region     = "eu-west-1"
+          kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
+        }
+      }
+    }
+  }
 }
 ```
 
@@ -95,4 +113,4 @@ NOTE: Because the same policy document is applied in every region, use region-ag
 
 NOTE: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
 
-NOTE: `replicate_policy` is only supported for regular `secrets`. Rotating secrets (`rotate_secrets`) currently do not support `replica_regions` at all, so there is no replica policy propagation for them.
+NOTE: Rotating secrets (`rotate_secrets`) support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. If you previously set `replica_regions` under `rotate_secrets`, upgrading to this version will begin managing those replicas instead of ignoring that attribute.

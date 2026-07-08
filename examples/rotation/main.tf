@@ -9,6 +9,23 @@ terraform {
   }
 }
 
+# Resource policy applied to the primary rotating secret and, via
+# replicate_policy, to every replica region as well.
+data "aws_iam_policy_document" "secret_policy" {
+  statement {
+    sid    = "AllowApplicationAccess"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
+    }
+
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = ["*"]
+  }
+}
+
 module "secrets-manager-4" {
 
   #source = "lgallard/secrets-manager/aws"
@@ -26,6 +43,15 @@ module "secrets-manager-4" {
       secret_string           = "This is another example"
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
       recovery_window_in_days = 7
+      policy                  = data.aws_iam_policy_document.secret_policy.json
+      replicate_policy        = true
+      replica_regions = {
+        us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        eu-west-1 = {
+          region     = "eu-west-1"
+          kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
+        }
+      }
     },
   }
 

@@ -1,5 +1,22 @@
 # Rotation example
 ```
+# Resource policy applied to the primary rotating secret and, via
+# replicate_policy, to every replica region as well.
+data "aws_iam_policy_document" "secret_policy" {
+  statement {
+    sid    = "AllowApplicationAccess"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
+    }
+
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = ["*"]
+  }
+}
+
 module "secrets-manager-4" {
 
   #source = "lgallard/secrets-manager/aws"
@@ -17,6 +34,15 @@ module "secrets-manager-4" {
       secret_string           = "This is another example"
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
       recovery_window_in_days = 7
+      policy                  = data.aws_iam_policy_document.secret_policy.json
+      replicate_policy        = true
+      replica_regions = {
+        us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+        eu-west-1 = {
+          region     = "eu-west-1"
+          kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
+        }
+      }
     },
   }
 
@@ -27,9 +53,15 @@ module "secrets-manager-4" {
   }
 
 }
+```
+
+Rotating secrets support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. Because the same policy document is applied in every region, use region-agnostic statements such as `resources = ["*"]` instead of hardcoding the primary secret ARN. If you previously set `replica_regions` under `rotate_secrets`, upgrading to this version will begin managing those replicas instead of ignoring that attribute.
 
 # Lambda to rotate secrets
-# AWS temaplates available here https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas
+
+AWS templates are available at https://github.com/aws-samples/aws-secrets-manager-rotation-lambdas.
+
+```hcl
 module "rotate_secret_lambda" {
   source  = "spring-media/lambda/aws"
   version = "5.2.0"

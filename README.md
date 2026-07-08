@@ -219,7 +219,7 @@ module "secrets-manager-replication" {
 
 #### Replicating the resource policy
 
-AWS Secrets Manager replication copies the secret value to replica regions, but **not** the resource policy. Set `replicate_policy = true` on a secret to have the module apply the secret's `policy` in every replica region as well — updates to the policy on the source secret then propagate to all replicas on the next apply:
+AWS Secrets Manager replication copies the secret value to replica regions, but **not** the resource policy. Set `replicate_policy = true` on a regular or rotating secret to have the module apply the secret's `policy` in every replica region as well — updates to the policy on the source secret then propagate to all replicas on the next apply:
 
 ```hcl
 module "secrets-manager-replication" {
@@ -246,7 +246,7 @@ Because the same policy document is applied in every region, use region-agnostic
 
 > **Note**: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
 
-> **Limitation**: `replicate_policy` is only supported for regular `secrets`. Rotating secrets (`rotate_secrets`) currently do not support `replica_regions` at all, so there is no replica policy propagation for them.
+> **Note**: Rotating secrets (`rotate_secrets`) now support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. If you previously set `replica_regions` under `rotate_secrets`, upgrading to this version will begin managing those replicas instead of ignoring that attribute.
 
 ### Lifecycle Configuration
 
@@ -607,6 +607,7 @@ No modules.
 |------|------|
 | [aws_secretsmanager_secret.rsm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.sm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret_policy.rsm-rp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_policy) | resource |
 | [aws_secretsmanager_secret_policy.sm-rp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_policy) | resource |
 | [aws_secretsmanager_secret_rotation.rsm-sr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
 | [aws_secretsmanager_secret_version.rsm-sv](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
@@ -625,7 +626,7 @@ No modules.
 | <a name="input_ephemeral"></a> [ephemeral](#input\_ephemeral) | Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (\_wo) and are not persisted to state. Example: true | `bool` | `false` | no |
 | <a name="input_existing_secrets"></a> [existing\_secrets](#input\_existing\_secrets) | Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing\_secret = "arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret" } | `map(string)` | `{}` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
-| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Note: rotating secrets do not support replica\_regions or replicate\_policy (replica policy propagation is only available for var.secrets). Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Set replica\_regions to replicate rotating secrets across regions, and set replicate\_policy (bool, default false) to apply the secret's resource policy to all replica\_regions on each apply. If replica\_regions was already set on older module versions, upgrading will begin managing those replicas. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Set the optional per-secret attribute replicate\_policy (bool, default false) to apply the secret's resource policy to all of its replica\_regions on each apply. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = "prod", Owner = "team" } | `any` | `{}` | no |
 | <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, avoiding other users changing or rotating secrets by subsequent Terraform runs. Example: true | `bool` | `false` | no |
@@ -640,8 +641,9 @@ No modules.
 | <a name="output_existing_secrets"></a> [existing\_secrets](#output\_existing\_secrets) | Map of existing secrets referenced as data sources with their complete attributes. |
 | <a name="output_rotate_secret_arns"></a> [rotate\_secret\_arns](#output\_rotate\_secret\_arns) | Map of rotating secret names to their ARNs. Use these ARNs to grant permissions or reference rotating secrets in IAM policies and other AWS resources. |
 | <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
+| <a name="output_rotate_secret_replica_policies"></a> [rotate\_secret\_replica\_policies](#output\_rotate\_secret\_replica\_policies) | Map of resource policies applied to rotating replica secrets, keyed by '<secret\_key>:<replica\_region>'. Only populated for rotating secrets with replicate\_policy enabled. |
 | <a name="output_rotate_secret_versions"></a> [rotate\_secret\_versions](#output\_rotate\_secret\_versions) | Map of managed rotating secret versions with their ARNs and version information. |
-| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, and rotation information. |
+| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
 | <a name="output_secret_replica_policies"></a> [secret\_replica\_policies](#output\_secret\_replica\_policies) | Map of resource policies applied to replica secrets, keyed by '<secret\_key>:<replica\_region>'. Only populated for secrets with replicate\_policy enabled. |
