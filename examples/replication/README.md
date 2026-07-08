@@ -95,4 +95,4 @@ NOTE: Because the same policy document is applied in every region, use region-ag
 
 NOTE: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
 
-NOTE: Rotating secrets (`rotate_secrets`) support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`.
+NOTE: Rotating secrets (`rotate_secrets`) support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. If you previously set `replica_regions` under `rotate_secrets`, upgrading to this version will begin managing those replicas instead of ignoring that attribute.

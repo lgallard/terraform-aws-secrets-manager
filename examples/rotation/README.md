@@ -55,7 +55,7 @@ module "secrets-manager-4" {
 }
 ```
 
-Rotating secrets support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. Because the same policy document is applied in every region, use region-agnostic statements such as `resources = ["*"]` instead of hardcoding the primary secret ARN.
+Rotating secrets support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. Because the same policy document is applied in every region, use region-agnostic statements such as `resources = ["*"]` instead of hardcoding the primary secret ARN. If you previously set `replica_regions` under `rotate_secrets`, upgrading to this version will begin managing those replicas instead of ignoring that attribute.
 
 # Lambda to rotate secrets
 

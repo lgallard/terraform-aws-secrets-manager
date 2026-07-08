@@ -123,7 +123,7 @@ resource "aws_secretsmanager_secret" "sm" {
     for_each = local.secrets_config[each.key].replica_regions
     content {
       region     = try(replica.value.region, replica.key)
-      kms_key_id = try(replica.value.kms_key_id, null)
+      kms_key_id = try(replica.value.kms_key_id, can(tostring(replica.value)) ? tostring(replica.value) : null)
     }
   }
 }
@@ -208,7 +208,7 @@ resource "aws_secretsmanager_secret" "rsm" {
     for_each = local.rotate_secrets_config[each.key].replica_regions
     content {
       region     = try(replica.value.region, replica.key)
-      kms_key_id = try(replica.value.kms_key_id, null)
+      kms_key_id = try(replica.value.kms_key_id, can(tostring(replica.value)) ? tostring(replica.value) : null)
     }
   }
 }
