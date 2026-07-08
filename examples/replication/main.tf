@@ -9,8 +9,8 @@ terraform {
   }
 }
 
-# Resource policy applied to the primary secret and, via replicate_policy,
-# to every replica region as well.
+# Resource policy applied to the primary secret. AWS Secrets Manager
+# replicates resource policies to replica regions automatically.
 data "aws_iam_policy_document" "secret_policy" {
   statement {
     sid    = "AllowApplicationAccess"
@@ -57,11 +57,10 @@ module "secrets-manager-6" {
       recovery_window_in_days = 7
     },
     secret-with-policy = {
-      description             = "Secret whose resource policy is kept in sync on every replica"
+      description             = "Secret whose resource policy is replicated by AWS"
       recovery_window_in_days = 7
       secret_string           = "This is an example"
       policy                  = data.aws_iam_policy_document.secret_policy.json
-      replicate_policy        = true
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:1234567890:key/12345678-1234-1234-1234-123456789012"
         us-east-2 = "arn:aws:kms:us-east-2:1234567890:key/12345678-1234-1234-1234-123456789012"
@@ -72,12 +71,11 @@ module "secrets-manager-6" {
 
   rotate_secrets = {
     rotating-secret-with-policy = {
-      description             = "Rotating secret whose resource policy is kept in sync on every replica"
+      description             = "Rotating secret whose resource policy is replicated by AWS"
       recovery_window_in_days = 7
       secret_string           = "This is a rotating example"
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
       policy                  = data.aws_iam_policy_document.secret_policy.json
-      replicate_policy        = true
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
         eu-west-1 = {

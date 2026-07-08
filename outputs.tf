@@ -107,25 +107,6 @@ output "secrets_by_name" {
   )
 }
 
-# Replica policy outputs
-output "secret_replica_policies" {
-  description = "Map of resource policies applied to replica secrets, keyed by '<secret_key>:<replica_region>'. Only populated for secrets with replicate_policy enabled."
-  value = { for k, v in aws_secretsmanager_secret_policy.sm-rp : k => {
-    id         = v.id
-    secret_arn = v.secret_arn
-    region     = v.region
-  } }
-}
-
-output "rotate_secret_replica_policies" {
-  description = "Map of resource policies applied to rotating replica secrets, keyed by '<secret_key>:<replica_region>'. Only populated for rotating secrets with replicate_policy enabled."
-  value = { for k, v in aws_secretsmanager_secret_policy.rsm-rp : k => {
-    id         = v.id
-    secret_arn = v.secret_arn
-    region     = v.region
-  } }
-}
-
 # Data source outputs for existing secrets
 output "existing_secrets" {
   description = "Map of existing secrets referenced as data sources with their complete attributes."

@@ -52,7 +52,7 @@ NOTE: If you leave the replica_regions with an empty map it will use the default
 
 # Replicating the resource policy
 
-AWS Secrets Manager replication copies the secret value to the replica regions, but **not** the resource policy. Set `replicate_policy = true` on a regular or rotating secret to have the module apply the primary secret's `policy` to every replica region, so policy updates on the source secret propagate to all replicas on the next apply.
+AWS Secrets Manager replication copies encrypted secret data and metadata, including resource policies, to replica regions. Configure `policy` on the primary regular or rotating secret; AWS propagates that policy to replicas automatically.
 
 ```
 data "aws_iam_policy_document" "secret_policy" {
@@ -76,11 +76,10 @@ module "secrets-manager-6" {
 
   secrets = {
     secret-with-policy = {
-      description             = "Secret whose resource policy is kept in sync on every replica"
+      description             = "Secret whose resource policy is replicated by AWS"
       recovery_window_in_days = 7
       secret_string           = "This is an example"
       policy                  = data.aws_iam_policy_document.secret_policy.json
-      replicate_policy        = true
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:1234567890:key/12345678-1234-1234-1234-123456789012"
         us-east-2 = "arn:aws:kms:us-east-2:1234567890:key/12345678-1234-1234-1234-123456789012"
@@ -91,12 +90,11 @@ module "secrets-manager-6" {
 
   rotate_secrets = {
     rotating-secret-with-policy = {
-      description             = "Rotating secret whose resource policy is kept in sync on every replica"
+      description             = "Rotating secret whose resource policy is replicated by AWS"
       recovery_window_in_days = 7
       secret_string           = "This is a rotating example"
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
       policy                  = data.aws_iam_policy_document.secret_policy.json
-      replicate_policy        = true
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
         eu-west-1 = {
@@ -109,8 +107,6 @@ module "secrets-manager-6" {
 }
 ```
 
-NOTE: Because the same policy document is applied in every region, use region-agnostic statements (e.g. `resources = ["*"]`, which scopes to the attached secret) rather than hardcoding the primary secret's ARN.
+NOTE: Policy replication is asynchronous. AWS rejects direct resource-policy updates against replica secrets; update the primary secret policy instead. If a replica must diverge, promote it to a standalone secret first.
 
-NOTE: Replication is asynchronous. On the very first apply that enables replication, a replica may still be provisioning when its policy is applied; if AWS returns `ResourceNotFoundException`, simply re-run `terraform apply`.
-
-NOTE: Rotating secrets (`rotate_secrets`) support `replica_regions` and `replicate_policy` using the same input shape as regular `secrets`. If you previously set `replica_regions` under `rotate_secrets`, upgrading to this version will begin managing those replicas instead of ignoring that attribute.
+NOTE: Rotating secrets (`rotate_secrets`) support `replica_regions` using the same input shape as regular `secrets`. If you previously set `replica_regions` under `rotate_secrets`, version 1.2.0 and later manage those replicas instead of ignoring that attribute.
