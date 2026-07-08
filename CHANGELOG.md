@@ -5,6 +5,13 @@
 
 * replicate security-hardened Claude Code Review workflow with PR focus ([#126](https://github.com/lgallard/terraform-aws-secrets-manager/issues/126)) ([a3e9803](https://github.com/lgallard/terraform-aws-secrets-manager/commit/a3e98038376bd2f32956ababb7c7a3e13255a645))
 
+## [1.2.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/1.1.0...1.2.0) (2026-07-08)
+
+
+### Features
+
+* support replicas for rotating secrets ([#186](https://github.com/lgallard/terraform-aws-secrets-manager/issues/186)) ([19d9d8d](https://github.com/lgallard/terraform-aws-secrets-manager/commit/19d9d8de85dc8e6ec0a44f7bde129d03faa7e604))
+
 ## [1.1.0](https://github.com/lgallard/terraform-aws-secrets-manager/compare/1.0.0...1.1.0) (2026-07-08)
 
 
