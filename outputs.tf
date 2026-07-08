@@ -107,7 +107,6 @@ output "secrets_by_name" {
   )
 }
 
-
 # Data source outputs for existing secrets
 output "existing_secrets" {
   description = "Map of existing secrets referenced as data sources with their complete attributes."

@@ -13,7 +13,7 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 - ✅ **Cross-Region Replication**: Support for replicating secrets across AWS regions
 - ✅ **KMS Encryption**: Support for customer-managed KMS keys
 - ✅ **Resource Policies**: Attach custom IAM policies to secrets
-- ✅ **Replica Policy Propagation**: Optionally keep replica secrets' resource policies in sync with the primary
+- ✅ **Native Policy Replication**: AWS Secrets Manager replicates resource policies to replica regions automatically
 - ✅ **Flexible Secret Types**: Support for plain text, key/value pairs, and binary secrets
 
 ## Compatibility
@@ -244,6 +244,8 @@ module "secrets-manager-replication" {
 Policy replication is asynchronous. AWS rejects direct resource-policy updates against replica secrets; update the primary secret policy instead. If a replica must diverge, promote it to a standalone secret first.
 
 > **Note**: Rotating secrets (`rotate_secrets`) support `replica_regions` using the same input shape as regular `secrets`. If you previously set `replica_regions` under `rotate_secrets`, version 1.2.0 and later manage those replicas instead of ignoring that attribute.
+>
+> **Migration note for 1.2.0 users**: `replicate_policy`, `secret_replica_policies`, and `rotate_secret_replica_policies` have been removed because direct policy writes to replicas fail. Remove `replicate_policy = true` from module inputs and remove references to the removed outputs. If Terraform had already created any replica policy resources in state, the next apply will destroy them; this is expected because AWS manages replica policies from the primary secret.
 
 ### Lifecycle Configuration
 
