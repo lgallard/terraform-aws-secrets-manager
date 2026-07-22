@@ -1,8 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    ":dependencyDashboard"
+    "github>lgallard/renovate-config"
   ],
   "major": {
     "dependencyDashboardApproval": true
@@ -43,13 +42,19 @@
       ]
     },
     {
-      "matchDatasources": ["golang-version"],
+      "matchDatasources": [
+        "golang-version"
+      ],
       "ignoreUnstable": true,
       "enabled": true
     },
     {
-      "matchDepTypes": ["action"],
-      "matchPackageNames": ["actions/setup-go"],
+      "matchDepTypes": [
+        "action"
+      ],
+      "matchPackageNames": [
+        "actions/setup-go"
+      ],
       "extractVersion": "^v(?<version>.*)$",
       "versioning": "go-mod-directive",
       "ignoreUnstable": true
