@@ -2,19 +2,21 @@ locals {
   # Cache lookups for regular secrets to improve performance and readability
   secrets_config = {
     for k, v in var.secrets : k => {
-      name_prefix                    = lookup(v, "name_prefix", null)
-      name                           = lookup(v, "name", null)
-      description                    = lookup(v, "description", null)
-      kms_key_id                     = lookup(v, "kms_key_id", null)
-      policy                         = lookup(v, "policy", null)
-      force_overwrite_replica_secret = lookup(v, "force_overwrite_replica_secret", false)
-      recovery_window_in_days        = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
-      tags                           = lookup(v, "tags", null)
-      replica_regions                = lookup(v, "replica_regions", {})
-      secret_string                  = lookup(v, "secret_string", null)
-      secret_key_value               = lookup(v, "secret_key_value", null)
-      secret_binary                  = lookup(v, "secret_binary", null)
-      secret_string_wo_version       = lookup(v, "secret_string_wo_version", null)
+      name_prefix                        = lookup(v, "name_prefix", null)
+      name                               = lookup(v, "name", null)
+      description                        = lookup(v, "description", null)
+      kms_key_id                         = lookup(v, "kms_key_id", null)
+      policy                             = lookup(v, "policy", null)
+      block_public_policy                = lookup(v, "block_public_policy", null)
+      manage_policy_as_separate_resource = lookup(v, "manage_policy_as_separate_resource", false)
+      force_overwrite_replica_secret     = lookup(v, "force_overwrite_replica_secret", false)
+      recovery_window_in_days            = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
+      tags                               = lookup(v, "tags", null)
+      replica_regions                    = lookup(v, "replica_regions", {})
+      secret_string                      = lookup(v, "secret_string", null)
+      secret_key_value                   = lookup(v, "secret_key_value", null)
+      secret_binary                      = lookup(v, "secret_binary", null)
+      secret_string_wo_version           = lookup(v, "secret_string_wo_version", null)
       # Computed name based on priority: name > name_prefix > key
       computed_name        = lookup(v, "name", null) != null ? lookup(v, "name", null) : (lookup(v, "name_prefix", null) != null ? null : k)
       computed_name_prefix = lookup(v, "name_prefix", null)
@@ -24,21 +26,23 @@ locals {
   # Cache lookups for rotating secrets
   rotate_secrets_config = {
     for k, v in var.rotate_secrets : k => {
-      name_prefix                    = lookup(v, "name_prefix", null)
-      name                           = lookup(v, "name", null)
-      description                    = lookup(v, "description", null)
-      kms_key_id                     = lookup(v, "kms_key_id", null)
-      policy                         = lookup(v, "policy", null)
-      force_overwrite_replica_secret = lookup(v, "force_overwrite_replica_secret", false)
-      recovery_window_in_days        = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
-      tags                           = lookup(v, "tags", null)
-      replica_regions                = lookup(v, "replica_regions", {})
-      secret_string                  = lookup(v, "secret_string", null)
-      secret_key_value               = lookup(v, "secret_key_value", null)
-      secret_binary                  = lookup(v, "secret_binary", null)
-      secret_string_wo_version       = lookup(v, "secret_string_wo_version", null)
-      rotation_lambda_arn            = lookup(v, "rotation_lambda_arn", null)
-      automatically_after_days       = lookup(v, "automatically_after_days", var.automatically_after_days)
+      name_prefix                        = lookup(v, "name_prefix", null)
+      name                               = lookup(v, "name", null)
+      description                        = lookup(v, "description", null)
+      kms_key_id                         = lookup(v, "kms_key_id", null)
+      policy                             = lookup(v, "policy", null)
+      block_public_policy                = lookup(v, "block_public_policy", null)
+      manage_policy_as_separate_resource = lookup(v, "manage_policy_as_separate_resource", false)
+      force_overwrite_replica_secret     = lookup(v, "force_overwrite_replica_secret", false)
+      recovery_window_in_days            = lookup(v, "recovery_window_in_days", var.recovery_window_in_days)
+      tags                               = lookup(v, "tags", null)
+      replica_regions                    = lookup(v, "replica_regions", {})
+      secret_string                      = lookup(v, "secret_string", null)
+      secret_key_value                   = lookup(v, "secret_key_value", null)
+      secret_binary                      = lookup(v, "secret_binary", null)
+      secret_string_wo_version           = lookup(v, "secret_string_wo_version", null)
+      rotation_lambda_arn                = lookup(v, "rotation_lambda_arn", null)
+      automatically_after_days           = lookup(v, "automatically_after_days", var.automatically_after_days)
       # Computed name based on priority: name > name_prefix > key
       computed_name        = lookup(v, "name", null) != null ? lookup(v, "name", null) : (lookup(v, "name_prefix", null) != null ? null : k)
       computed_name_prefix = lookup(v, "name_prefix", null)
@@ -81,7 +85,7 @@ resource "aws_secretsmanager_secret" "sm" {
   name_prefix                    = local.secrets_config[each.key].computed_name_prefix
   description                    = local.secrets_config[each.key].description
   kms_key_id                     = local.secrets_config[each.key].kms_key_id
-  policy                         = local.secrets_config[each.key].policy
+  policy                         = local.secrets_config[each.key].manage_policy_as_separate_resource ? null : local.secrets_config[each.key].policy
   force_overwrite_replica_secret = local.secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.secrets_config[each.key].recovery_window_in_days
   tags                           = merge(var.default_tags, var.tags, local.secrets_config[each.key].tags)
@@ -93,6 +97,17 @@ resource "aws_secretsmanager_secret" "sm" {
       kms_key_id = try(replica.value.kms_key_id, can(tostring(replica.value)) ? tostring(replica.value) : null)
     }
   }
+}
+
+resource "aws_secretsmanager_secret_policy" "sm" {
+  for_each = {
+    for k, v in local.secrets_config : k => v
+    if v.manage_policy_as_separate_resource && v.policy != null && v.policy != ""
+  }
+
+  secret_arn          = aws_secretsmanager_secret.sm[each.key].arn
+  policy              = each.value.policy
+  block_public_policy = each.value.block_public_policy
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
@@ -145,7 +160,7 @@ resource "aws_secretsmanager_secret" "rsm" {
   name_prefix                    = local.rotate_secrets_config[each.key].computed_name_prefix
   description                    = local.rotate_secrets_config[each.key].description
   kms_key_id                     = local.rotate_secrets_config[each.key].kms_key_id
-  policy                         = local.rotate_secrets_config[each.key].policy
+  policy                         = local.rotate_secrets_config[each.key].manage_policy_as_separate_resource ? null : local.rotate_secrets_config[each.key].policy
   force_overwrite_replica_secret = local.rotate_secrets_config[each.key].force_overwrite_replica_secret
   recovery_window_in_days        = local.rotate_secrets_config[each.key].recovery_window_in_days
   tags                           = merge(var.default_tags, var.tags, local.rotate_secrets_config[each.key].tags)
@@ -157,6 +172,17 @@ resource "aws_secretsmanager_secret" "rsm" {
       kms_key_id = try(replica.value.kms_key_id, can(tostring(replica.value)) ? tostring(replica.value) : null)
     }
   }
+}
+
+resource "aws_secretsmanager_secret_policy" "rsm" {
+  for_each = {
+    for k, v in local.rotate_secrets_config : k => v
+    if v.manage_policy_as_separate_resource && v.policy != null && v.policy != ""
+  }
+
+  secret_arn          = aws_secretsmanager_secret.rsm[each.key].arn
+  policy              = each.value.policy
+  block_public_policy = each.value.block_public_policy
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {
