@@ -77,6 +77,27 @@ output "rotate_secret_versions" {
   } }
 }
 
+# Secret policy outputs
+output "secret_policies" {
+  description = "Map of regular secret resource policies managed through aws_secretsmanager_secret_policy when manage_policy_as_separate_resource is enabled."
+  value = { for k, v in aws_secretsmanager_secret_policy.sm : k => {
+    id                  = v.id
+    secret_arn          = v.secret_arn
+    policy              = v.policy
+    block_public_policy = v.block_public_policy
+  } }
+}
+
+output "rotate_secret_policies" {
+  description = "Map of rotating secret resource policies managed through aws_secretsmanager_secret_policy when manage_policy_as_separate_resource is enabled."
+  value = { for k, v in aws_secretsmanager_secret_policy.rsm : k => {
+    id                  = v.id
+    secret_arn          = v.secret_arn
+    policy              = v.policy
+    block_public_policy = v.block_public_policy
+  } }
+}
+
 # Rotation configuration outputs
 output "secret_rotations" {
   description = "Map of secret rotation configurations with Lambda ARN and rotation schedule information."

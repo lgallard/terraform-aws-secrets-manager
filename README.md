@@ -13,6 +13,7 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 - ✅ **Cross-Region Replication**: Support for replicating secrets across AWS regions
 - ✅ **KMS Encryption**: Support for customer-managed KMS keys
 - ✅ **Resource Policies**: Attach custom IAM policies to secrets
+- ✅ **Block Public Policy Validation**: Optional Zelkova validation for resource policies via `block_public_policy`
 - ✅ **Native Policy Replication**: AWS Secrets Manager replicates resource policies to replica regions automatically
 - ✅ **Flexible Secret Types**: Support for plain text, key/value pairs, and binary secrets
 
@@ -188,6 +189,42 @@ module "secrets-manager-policy" {
   }
 }
 ```
+
+By default, `policy` stays on `aws_secretsmanager_secret.policy` to preserve the existing resource addresses and plan behavior for current users. To enable AWS Secrets Manager `BlockPublicPolicy` / Zelkova validation, opt in per secret to managing the policy with the dedicated `aws_secretsmanager_secret_policy` resource:
+
+```hcl
+data "aws_iam_policy_document" "validated_secret_policy" {
+  statement {
+    sid    = "AllowApplicationAccess"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
+    }
+
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = ["*"]
+  }
+}
+
+module "secrets-manager-validated-policy" {
+  source = "lgallard/secrets-manager/aws"
+
+  secrets = {
+    app-config = {
+      description   = "Application configuration with validated resource policy"
+      secret_string = jsonencode({ api_key = "secret-api-key" })
+
+      policy                             = data.aws_iam_policy_document.validated_secret_policy.json
+      manage_policy_as_separate_resource = true
+      block_public_policy                = true
+    }
+  }
+}
+```
+
+`manage_policy_as_separate_resource` is intentionally opt-in for backward compatibility. Existing configurations that only set `policy` continue using the inline secret policy argument. When switching an existing secret to the separate policy resource, Terraform will move management from `aws_secretsmanager_secret.policy` to `aws_secretsmanager_secret_policy`; review the plan for the expected policy update on the primary secret. AWS Secrets Manager replicates the primary secret's resource policy to replica regions automatically.
 
 ### Cross-Region Secret Replication
 
@@ -594,7 +631,7 @@ Successfully moved 1 object(s).
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.53.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.65.0 |
 
 ## Modules
 
@@ -606,6 +643,8 @@ No modules.
 |------|------|
 | [aws_secretsmanager_secret.rsm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.sm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret_policy.rsm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_policy) | resource |
+| [aws_secretsmanager_secret_policy.sm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_policy) | resource |
 | [aws_secretsmanager_secret_rotation.rsm-sr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
 | [aws_secretsmanager_secret_version.rsm-sv](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.rsm-svu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
@@ -623,8 +662,8 @@ No modules.
 | <a name="input_ephemeral"></a> [ephemeral](#input\_ephemeral) | Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (\_wo) and are not persisted to state. Example: true | `bool` | `false` | no |
 | <a name="input_existing_secrets"></a> [existing\_secrets](#input\_existing\_secrets) | Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing\_secret = "arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret" } | `map(string)` | `{}` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
-| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Set replica\_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
-| <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Set replica\_regions to replicate secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Set replica\_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
+| <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Set replica\_regions to replicate secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = "prod", Owner = "team" } | `any` | `{}` | no |
 | <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, avoiding other users changing or rotating secrets by subsequent Terraform runs. Example: true | `bool` | `false` | no |
 | <a name="input_version_stages"></a> [version\_stages](#input\_version\_stages) | List of version stages to be handled. Valid values are 'AWSCURRENT' and 'AWSPENDING'. Kept as null for backwards compatibility. Example: ["AWSCURRENT"] | `list(string)` | `null` | no |
@@ -638,10 +677,12 @@ No modules.
 | <a name="output_existing_secrets"></a> [existing\_secrets](#output\_existing\_secrets) | Map of existing secrets referenced as data sources with their complete attributes. |
 | <a name="output_rotate_secret_arns"></a> [rotate\_secret\_arns](#output\_rotate\_secret\_arns) | Map of rotating secret names to their ARNs. Use these ARNs to grant permissions or reference rotating secrets in IAM policies and other AWS resources. |
 | <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
+| <a name="output_rotate_secret_policies"></a> [rotate\_secret\_policies](#output\_rotate\_secret\_policies) | Map of rotating secret resource policies managed through aws\_secretsmanager\_secret\_policy when manage\_policy\_as\_separate\_resource is enabled. |
 | <a name="output_rotate_secret_versions"></a> [rotate\_secret\_versions](#output\_rotate\_secret\_versions) | Map of managed rotating secret versions with their ARNs and version information. |
 | <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
+| <a name="output_secret_policies"></a> [secret\_policies](#output\_secret\_policies) | Map of regular secret resource policies managed through aws\_secretsmanager\_secret\_policy when manage\_policy\_as\_separate\_resource is enabled. |
 | <a name="output_secret_rotations"></a> [secret\_rotations](#output\_secret\_rotations) | Map of secret rotation configurations with Lambda ARN and rotation schedule information. |
 | <a name="output_secret_versions"></a> [secret\_versions](#output\_secret\_versions) | Map of managed secret versions with their ARNs and version information. |
 | <a name="output_secrets"></a> [secrets](#output\_secrets) | Complete map of regular secrets with all attributes including ARNs, names, KMS keys, descriptions, and replica information. |

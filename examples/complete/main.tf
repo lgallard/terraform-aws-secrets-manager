@@ -1,5 +1,18 @@
-# Complete example demonstrating all module features
-# This example shows how to use the enhanced code quality features
+# Example policy document used by the policy management examples below.
+data "aws_iam_policy_document" "application_secret_access" {
+  statement {
+    sid    = "AllowApplicationAccess"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
+    }
+
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = ["*"]
+  }
+}
 
 module "secrets_manager" {
   source = "../../"
@@ -46,6 +59,14 @@ module "secrets_manager" {
       name_prefix   = "production/api/"
       description   = "Third-party API key"
       secret_string = "api-key-value-here"
+
+      # Opt in to separate policy management when Zelkova
+      # BlockPublicPolicy validation is required. Existing users who
+      # only set policy keep the legacy inline policy behavior.
+      policy                             = data.aws_iam_policy_document.application_secret_access.json
+      manage_policy_as_separate_resource = true
+      block_public_policy                = true
+
       tags = {
         SecretType = "api-key"
         Service    = "external-api"
