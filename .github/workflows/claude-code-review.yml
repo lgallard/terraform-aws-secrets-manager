@@ -381,10 +381,14 @@ jobs:
         uses: anthropics/claude-code-action@756cc22e19660d20e8cc9496b4f242475a7f7790 # v1.0.235
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--model claude-sonnet-4-6"
-
-          # Optional: Add specific tools for running tests or linting
-          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
+          # Tool permissions are passed through claude_args for claude-code-action v1.
+          # Keep Bash tool patterns free of spaces; claude-code-action parses
+          # claude_args shell-style, so patterns like Bash(gh pr comment:*) are
+          # split into invalid tool names and prevent codebot from commenting.
+          claude_args: >-
+            --model claude-sonnet-4-6
+            --mcp-config ${{ github.workspace }}/.github/claude-mcp-config.json
+            --allowedTools Task,Read,Grep,Glob,Bash(gh:*),Bash(pre-commit:*),Bash(terraform:*),Bash(terraform-docs:*),mcp__github_comment__*,mcp__github_ci__*,mcp__terraform-server__getProviderDocs,mcp__terraform-server__resolveProviderDocID,mcp__terraform-server__searchModules,mcp__terraform-server__moduleDetails,mcp__context7__resolve-library-id,mcp__context7__get-library-docs
 
           # Dynamic prompt based on review mode
           prompt: |
