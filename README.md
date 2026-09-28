@@ -224,7 +224,7 @@ module "secrets-manager-validated-policy" {
 }
 ```
 
-`manage_policy_as_separate_resource` is intentionally opt-in for backward compatibility. Existing configurations that only set `policy` continue using the inline secret policy argument. When switching an existing secret to the separate policy resource, Terraform will move management from `aws_secretsmanager_secret.policy` to `aws_secretsmanager_secret_policy`; review the plan for the expected policy update on the primary secret. AWS Secrets Manager replicates the primary secret's resource policy to replica regions automatically.
+`manage_policy_as_separate_resource` is intentionally opt-in for backward compatibility. Existing configurations that only set `policy` continue using the inline secret policy argument. When switching an existing secret to the separate policy resource, Terraform will move management from `aws_secretsmanager_secret.policy` to `aws_secretsmanager_secret_policy`; review the plan for the expected policy update on the primary secret. AWS Secrets Manager replicates the primary secret's resource policy to replica regions automatically. Because the inline `policy` argument is unset in this mode, `secrets["key"].policy` and `rotate_secrets["key"].policy` outputs return `null`; read the effective policy from `secret_policies["key"].policy` or `rotate_secret_policies["key"].policy` instead.
 
 ### Cross-Region Secret Replication
 

@@ -89,7 +89,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      !can(v.block_public_policy) || try(v.manage_policy_as_separate_resource, false)
+      !try(v.block_public_policy == true, false) || try(v.manage_policy_as_separate_resource, false)
     ])
     error_message = "block_public_policy requires manage_policy_as_separate_resource = true for rotating secrets so the policy is managed with aws_secretsmanager_secret_policy."
   }
@@ -150,7 +150,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets :
-      !can(v.block_public_policy) || try(v.manage_policy_as_separate_resource, false)
+      !try(v.block_public_policy == true, false) || try(v.manage_policy_as_separate_resource, false)
     ])
     error_message = "block_public_policy requires manage_policy_as_separate_resource = true so the policy is managed with aws_secretsmanager_secret_policy."
   }
