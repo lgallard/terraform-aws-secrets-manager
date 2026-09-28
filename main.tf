@@ -107,7 +107,7 @@ resource "aws_secretsmanager_secret_policy" "sm" {
 
   secret_arn          = aws_secretsmanager_secret.sm[each.key].arn
   policy              = each.value.policy
-  block_public_policy = each.value.block_public_policy
+  block_public_policy = coalesce(each.value.block_public_policy, false)
 }
 
 resource "aws_secretsmanager_secret_version" "sm-sv" {
@@ -182,7 +182,7 @@ resource "aws_secretsmanager_secret_policy" "rsm" {
 
   secret_arn          = aws_secretsmanager_secret.rsm[each.key].arn
   policy              = each.value.policy
-  block_public_policy = each.value.block_public_policy
+  block_public_policy = coalesce(each.value.block_public_policy, false)
 }
 
 resource "aws_secretsmanager_secret_version" "rsm-sv" {

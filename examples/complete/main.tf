@@ -76,7 +76,7 @@ module "secrets_manager" {
     ssl_certificate = {
       name          = "production/ssl/certificate"
       description   = "SSL certificate for production domain"
-      secret_binary = file("${path.module}/certificate.pem")
+      secret_binary = file("${path.module}/certificate.pem.example")
       tags = {
         SecretType = "certificate"
         Domain     = "example.com"

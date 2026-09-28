@@ -18,7 +18,7 @@ variable "ephemeral" {
 
 # Secrets with rotation
 variable "rotate_secrets" {
-  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Set replica_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage_policy_as_separate_resource = true with block_public_policy to use aws_secretsmanager_secret_policy and Zelkova broad-access validation. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
+  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Set replica_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage_policy_as_separate_resource = true with block_public_policy to use aws_secretsmanager_secret_policy and Zelkova broad-access validation. block_public_policy is only honored when manage_policy_as_separate_resource = true. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
   type        = any
   default     = {}
 
@@ -97,7 +97,7 @@ variable "rotate_secrets" {
 
 # Regular secrets (non-rotating)
 variable "secrets" {
-  description = "Map of secrets to keep in AWS Secrets Manager. Set replica_regions to replicate secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage_policy_as_separate_resource = true with block_public_policy to use aws_secretsmanager_secret_policy and Zelkova broad-access validation. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\" } }"
+  description = "Map of secrets to keep in AWS Secrets Manager. Set replica_regions to replicate secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage_policy_as_separate_resource = true with block_public_policy to use aws_secretsmanager_secret_policy and Zelkova broad-access validation. block_public_policy is only honored when manage_policy_as_separate_resource = true. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\" } }"
   type        = any
   default     = {}
 
