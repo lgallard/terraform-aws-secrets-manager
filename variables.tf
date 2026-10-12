@@ -25,17 +25,9 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.rotation_lambda_arn != null && v.rotation_lambda_arn != "", false)
+      try(v.rotation_lambda_arn != null && v.rotation_lambda_arn != "" && can(regex("^arn:aws(-cn|-us-gov|-iso(-b)?)?:lambda:[a-z0-9-]+:[0-9]{12}:function:[a-zA-Z0-9_-]+(:[a-zA-Z0-9_$-]+)?$", v.rotation_lambda_arn)), false)
     ])
-    error_message = "All rotate_secrets must have a valid rotation_lambda_arn specified."
-  }
-
-  validation {
-    condition = alltrue([
-      for k, v in var.rotate_secrets :
-      try(v.rotation_lambda_arn, null) == null || try(v.rotation_lambda_arn, "") == "" || can(regex("^arn:aws(-cn|-us-gov|-iso(-b)?)?:lambda:[a-z0-9-]+:[0-9]{12}:function:[a-zA-Z0-9_-]+(:[a-zA-Z0-9_$-]+)?$", v.rotation_lambda_arn))
-    ])
-    error_message = "rotation_lambda_arn must be a valid Lambda function ARN."
+    error_message = "All rotate_secrets must have a valid rotation_lambda_arn specified as a Lambda function ARN."
   }
 
   validation {

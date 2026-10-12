@@ -99,6 +99,8 @@ module "secrets-manager-2" {
 
 ### Binary secrets
 
+Pass `secret_binary` values as raw strings. The module applies `base64encode()` before passing the value to the provider's `secret_binary` argument, so do not pre-encode values unless the consuming application intentionally expects a double-encoded payload.
+
 ```hcl
 module "secrets-manager-3" {
   source = "lgallard/secrets-manager/aws"
@@ -711,5 +713,5 @@ No modules.
 | <a name="output_secret_rotations"></a> [secret\_rotations](#output\_secret\_rotations) | Map of secret rotation configurations with Lambda ARN and rotation schedule information. |
 | <a name="output_secret_versions"></a> [secret\_versions](#output\_secret\_versions) | Map of managed secret versions with their ARNs and version information. |
 | <a name="output_secrets"></a> [secrets](#output\_secrets) | Complete map of regular secrets with all attributes including ARNs, names, KMS keys, descriptions, and replica information. |
-| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. If a regular and rotating secret share the same AWS name, the rotating secret ARN wins because Terraform map keys must be unique. |
+| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. Avoid configuring regular and rotating secrets with the same AWS name; if a collision exists, the rotating secret ARN wins because Terraform map keys must be unique. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
