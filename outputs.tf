@@ -102,11 +102,12 @@ output "rotate_secret_policies" {
 output "secret_rotations" {
   description = "Map of secret rotation configurations with Lambda ARN and rotation schedule information."
   value = { for k, v in aws_secretsmanager_secret_rotation.rsm-sr : k => {
-    arn                 = v.arn
+    arn                 = try(v.arn, null)
     id                  = v.id
     secret_id           = v.secret_id
     rotation_enabled    = v.rotation_enabled
     rotation_lambda_arn = v.rotation_lambda_arn
+    rotate_immediately  = v.rotate_immediately
     rotation_rules      = v.rotation_rules
   } }
 }

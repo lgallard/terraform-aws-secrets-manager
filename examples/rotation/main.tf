@@ -36,6 +36,7 @@ module "secrets-manager-4" {
       description             = "This is a secret to be rotated by a lambda"
       secret_string           = "This is an example"
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      rotate_immediately      = false
       recovery_window_in_days = 15
     },
     secret-rotate-2 = {
@@ -51,6 +52,14 @@ module "secrets-manager-4" {
           kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
         }
       }
+    },
+    secret-rotate-cron = {
+      description             = "This secret rotates during a scheduled UTC rotation window"
+      secret_string           = "This is a scheduled rotation example"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      schedule_expression     = "cron(0 8 ? * MON *)"
+      duration                = "3h"
+      recovery_window_in_days = 7
     },
   }
 
