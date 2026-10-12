@@ -26,6 +26,8 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 
 The module declares the AWS provider minimum at the root, so all usage modes use the same compatibility policy. Ephemeral mode additionally requires setting `secret_string_wo_version >= 1` for every managed secret value.
 
+> **Ephemeral binary secret note:** when `ephemeral = true`, binary inputs are base64-encoded and written through the provider's `secret_string_wo` write-only argument. Applications that need AWS `SecretBinary` semantics should keep ephemeral mode disabled for those secrets, or store/retrieve the base64 value intentionally as a string.
+
 ## Examples
 
 Check the [examples](/examples/) folder where you can see the complete compilation of snippets.
@@ -170,6 +172,7 @@ data "aws_iam_policy_document" "secret_policy" {
 
     actions   = ["secretsmanager:GetSecretValue"]
     # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
+    # Example scoped pattern: arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*
     resources = ["*"]
   }
 }
@@ -206,6 +209,7 @@ data "aws_iam_policy_document" "validated_secret_policy" {
 
     actions   = ["secretsmanager:GetSecretValue"]
     # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
+    # Example scoped pattern: arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*
     resources = ["*"]
   }
 }

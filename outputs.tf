@@ -86,6 +86,7 @@ output "secret_policies" {
     policy              = v.policy
     block_public_policy = v.block_public_policy
   } }
+  sensitive = true
 }
 
 output "rotate_secret_policies" {
@@ -96,6 +97,7 @@ output "rotate_secret_policies" {
     policy              = v.policy
     block_public_policy = v.block_public_policy
   } }
+  sensitive = true
 }
 
 # Rotation configuration outputs

@@ -33,7 +33,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      can(regex("^arn:aws(-cn|-us-gov|-iso(-b)?)?:lambda:[a-z0-9-]+:[0-9]{12}:function:[a-zA-Z0-9_-]+(:[a-zA-Z0-9_$-]+)?$", v.rotation_lambda_arn))
+      try(v.rotation_lambda_arn, null) == null || try(v.rotation_lambda_arn, "") == "" || can(regex("^arn:aws(-cn|-us-gov|-iso(-b)?)?:lambda:[a-z0-9-]+:[0-9]{12}:function:[a-zA-Z0-9_-]+(:[a-zA-Z0-9_$-]+)?$", v.rotation_lambda_arn))
     ])
     error_message = "rotation_lambda_arn must be a valid Lambda function ARN."
   }
@@ -79,17 +79,17 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.schedule_expression, null) == null || can(regex("^(cron|rate)\\(.+\\)$", v.schedule_expression))
+      try(v.schedule_expression, null) == null || can(regex("^cron\\(.+\\)$", v.schedule_expression)) || can(regex("^rate\\([1-9][0-9]* (minute|minutes|hour|hours|day|days)\\)$", v.schedule_expression))
     ])
-    error_message = "schedule_expression must be a valid Secrets Manager cron(...) or rate(...) expression."
+    error_message = "schedule_expression must be a valid Secrets Manager cron(...) or rate(...) expression. rate(...) expressions must use a positive integer and minute(s), hour(s), or day(s)."
   }
 
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.duration, null) == null || can(regex("^([2-9]|[1-6][0-9]|7[0-2])h$", v.duration))
+      try(v.duration, null) == null || can(regex("^([2-9]|1[0-9]|2[0-3])h$", v.duration))
     ])
-    error_message = "duration must be between 2h and 72h (for example, 3h)."
+    error_message = "duration must be between 2h and 23h (for example, 3h)."
   }
 
   validation {

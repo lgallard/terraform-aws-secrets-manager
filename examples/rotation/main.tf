@@ -23,6 +23,7 @@ data "aws_iam_policy_document" "secret_policy" {
 
     actions = ["secretsmanager:GetSecretValue"]
     # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
+    # Example scoped pattern: arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*
     resources = ["*"]
   }
 }
