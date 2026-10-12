@@ -13,7 +13,8 @@ data "aws_iam_policy_document" "secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["*"]
+    # Example scoped pattern for the rotating secret using this policy.
+    resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*"]
   }
 }
 
@@ -26,15 +27,18 @@ module "secrets-manager-4" {
     secret-rotate-1 = {
       description             = "This is a secret to be rotated by a lambda"
       secret_string           = "This is an example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      rotate_immediately      = false
+      automatically_after_days = 30
       recovery_window_in_days = 15
     },
     secret-rotate-2 = {
       description             = "This is another secret to be rotated by a lambda"
       secret_string           = "This is another example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
-      recovery_window_in_days = 7
-      policy                  = data.aws_iam_policy_document.secret_policy.json
+      rotation_lambda_arn      = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      recovery_window_in_days  = 7
+      automatically_after_days = 30
+      policy                   = data.aws_iam_policy_document.secret_policy.json
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
         eu-west-1 = {
@@ -42,6 +46,15 @@ module "secrets-manager-4" {
           kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/87654321-4321-4321-4321-210987654321"
         }
       }
+    },
+    secret-rotate-cron = {
+      description             = "This secret rotates during a scheduled UTC rotation window"
+      secret_string           = "This is a scheduled rotation example"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      schedule_expression     = "cron(0 8 ? * MON *)"
+      duration                = "3h"
+      rotate_immediately      = false # Wait for the next scheduled window instead of rotating on first apply.
+      recovery_window_in_days = 7
     },
   }
 
@@ -68,7 +81,7 @@ module "rotate_secret_lambda" {
   filename         = "secrets_manager_rotation.zip"
   function_name    = "secrets-manager-rotation"
   handler          = "secrets_manager_rotation.lambda_handler"
-  runtime          = "python3.7"
+  runtime          = "python3.12"
   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
 
   environment = {

@@ -37,7 +37,23 @@ output "secrets" {
 }
 
 output "rotate_secrets" {
-  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information."
+  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Kept for backward compatibility; prefer the equivalent rotating_secrets output in new configurations."
+  value = { for k, v in aws_secretsmanager_secret.rsm : k => {
+    arn                     = v.arn
+    id                      = v.id
+    name                    = v.name
+    description             = v.description
+    kms_key_id              = v.kms_key_id
+    policy                  = v.policy
+    recovery_window_in_days = v.recovery_window_in_days
+    tags                    = v.tags
+    tags_all                = v.tags_all
+    replica                 = v.replica
+  } }
+}
+
+output "rotating_secrets" {
+  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Alias for rotate_secrets with a less ambiguous name."
   value = { for k, v in aws_secretsmanager_secret.rsm : k => {
     arn                     = v.arn
     id                      = v.id
@@ -86,6 +102,7 @@ output "secret_policies" {
     policy              = v.policy
     block_public_policy = v.block_public_policy
   } }
+  sensitive = true
 }
 
 output "rotate_secret_policies" {
@@ -96,17 +113,19 @@ output "rotate_secret_policies" {
     policy              = v.policy
     block_public_policy = v.block_public_policy
   } }
+  sensitive = true
 }
 
 # Rotation configuration outputs
 output "secret_rotations" {
   description = "Map of secret rotation configurations with Lambda ARN and rotation schedule information."
   value = { for k, v in aws_secretsmanager_secret_rotation.rsm-sr : k => {
-    arn                 = v.arn
+    arn                 = try(v.arn, null)
     id                  = v.id
     secret_id           = v.secret_id
     rotation_enabled    = v.rotation_enabled
     rotation_lambda_arn = v.rotation_lambda_arn
+    rotate_immediately  = v.rotate_immediately
     rotation_rules      = v.rotation_rules
   } }
 }
@@ -121,7 +140,7 @@ output "all_secret_arns" {
 }
 
 output "secrets_by_name" {
-  description = "Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys."
+  description = "Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. Avoid configuring regular and rotating secrets with the same AWS name; if a collision exists, the rotating secret ARN wins because Terraform map keys must be unique."
   value = merge(
     { for k, v in aws_secretsmanager_secret.sm : v.name => v.arn },
     { for k, v in aws_secretsmanager_secret.rsm : v.name => v.arn }
@@ -155,4 +174,5 @@ output "existing_secret_versions" {
     version_stages = v.version_stages
     # Note: secret_string and secret_binary are sensitive and not exposed
   } } : {}
+  sensitive = true
 }

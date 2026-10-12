@@ -18,16 +18,16 @@ variable "ephemeral" {
 
 # Secrets with rotation
 variable "rotate_secrets" {
-  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Set replica_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage_policy_as_separate_resource = true with block_public_policy to use aws_secretsmanager_secret_policy and Zelkova broad-access validation. block_public_policy is only honored when manage_policy_as_separate_resource = true. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
+  description = "Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation_lambda_arn. Use automatically_after_days for day-based rotation, or schedule_expression and optional duration for cron/rate rotation windows; duration applies to whichever schedule is active, including the module-level automatically_after_days default. rotate_immediately can delay the initial rotation until the next scheduled window. Set replica_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage_policy_as_separate_resource = true with block_public_policy to use aws_secretsmanager_secret_policy and Zelkova broad-access validation. block_public_policy is only honored when manage_policy_as_separate_resource = true. Example: { mysecret = { description = \"My secret\", secret_string = \"secret-value\", rotation_lambda_arn = \"arn:aws:lambda:us-east-1:123456789012:function:my-function\" } }"
   type        = any
   default     = {}
 
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.rotation_lambda_arn != null && v.rotation_lambda_arn != "", false)
+      try(v.rotation_lambda_arn != null && v.rotation_lambda_arn != "" && can(regex("^arn:aws(-cn|-us-gov|-iso(-b)?)?:lambda:[a-z0-9-]+:[0-9]{12}:function:[a-zA-Z0-9_-]+(:[a-zA-Z0-9_$-]+)?$", v.rotation_lambda_arn)), false)
     ])
-    error_message = "All rotate_secrets must have a valid rotation_lambda_arn specified."
+    error_message = "All rotate_secrets must have a valid rotation_lambda_arn specified as a Lambda function ARN."
   }
 
   validation {
@@ -47,20 +47,58 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
+      try(v.recovery_window_in_days, null) == null || try(v.recovery_window_in_days == 0 || (v.recovery_window_in_days >= 7 && v.recovery_window_in_days <= 30), false)
+    ])
+    error_message = "Per-secret recovery_window_in_days for rotating secrets must be 0 (for immediate deletion) or between 7 and 30 days."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
+      try(v.kms_key_id, null) == null || can(regex("^(arn:aws(-cn|-us-gov|-iso(-b)?)?:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
 
-  # Validation for automatically_after_days disabled due to terraform validation limitations
-  # with optional attributes in complex types
-  # validation {
-  #   condition = alltrue([
-  #     for k, v in var.rotate_secrets :
-  #     try(v.automatically_after_days, null) == null || (v.automatically_after_days >= 1 && v.automatically_after_days <= 365)
-  #   ])
-  #   error_message = "automatically_after_days must be between 1 and 365 days."
-  # }
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
+      try(v.automatically_after_days, null) == null || try(v.automatically_after_days >= 1 && v.automatically_after_days <= 1000, false)
+    ])
+    error_message = "automatically_after_days must be between 1 and 1000 days."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
+      !(try(v.automatically_after_days, null) != null && try(v.schedule_expression, null) != null)
+    ])
+    error_message = "Set only one of automatically_after_days or schedule_expression for each rotating secret."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
+      try(v.schedule_expression, null) == null || can(regex("^cron\\(.+\\)$", v.schedule_expression)) || can(regex("^rate\\([1-9][0-9]* (minute|minutes|hour|hours|day|days)\\)$", v.schedule_expression))
+    ])
+    error_message = "schedule_expression must be a valid Secrets Manager cron(...) or rate(...) expression. rate(...) expressions must use a positive integer and minute(s), hour(s), or day(s)."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
+      try(v.duration, null) == null || can(regex("^([2-9]|1[0-9]|2[0-3])h$", v.duration))
+    ])
+    error_message = "duration must be between 2h and 23h (for example, 3h)."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
+      try(v.rotate_immediately, null) == null || try(contains([true, false], v.rotate_immediately), false)
+    ])
+    error_message = "rotate_immediately must be a boolean when set."
+  }
 
   validation {
     condition = alltrue([
@@ -73,7 +111,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      can(v.secret_string) && can(v.secret_binary) ? false : true
+      !(try(v.secret_string, null) != null && try(v.secret_binary, null) != null)
     ])
     error_message = "Cannot specify both secret_string and secret_binary for the same secret."
   }
@@ -118,7 +156,15 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets :
-      try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
+      try(v.recovery_window_in_days, null) == null || try(v.recovery_window_in_days == 0 || (v.recovery_window_in_days >= 7 && v.recovery_window_in_days <= 30), false)
+    ])
+    error_message = "Per-secret recovery_window_in_days must be 0 (for immediate deletion) or between 7 and 30 days."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.secrets :
+      try(v.kms_key_id, null) == null || can(regex("^(arn:aws(-cn|-us-gov|-iso(-b)?)?:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
@@ -134,7 +180,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets :
-      can(v.secret_string) && can(v.secret_binary) ? false : true
+      !(try(v.secret_string, null) != null && try(v.secret_binary, null) != null)
     ])
     error_message = "Cannot specify both secret_string and secret_binary for the same secret."
   }
@@ -163,13 +209,13 @@ variable "unmanaged" {
 }
 
 variable "automatically_after_days" {
-  description = "Specifies the number of days between automatic scheduled rotations of the secret. Must be between 1 and 365 days. Example: 30"
+  description = "Specifies the default number of days between automatic scheduled rotations of the secret. Must be between 1 and 1000 days. Per-secret rotate_secrets entries can override this with automatically_after_days or use schedule_expression instead. Example: 30"
   type        = number
   default     = 30
 
   validation {
-    condition     = var.automatically_after_days >= 1 && var.automatically_after_days <= 365
-    error_message = "Automatically after days must be between 1 and 365."
+    condition     = var.automatically_after_days >= 1 && var.automatically_after_days <= 1000
+    error_message = "Automatically after days must be between 1 and 1000."
   }
 }
 
