@@ -169,6 +169,7 @@ data "aws_iam_policy_document" "secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
+    # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
     resources = ["*"]
   }
 }
@@ -204,6 +205,7 @@ data "aws_iam_policy_document" "validated_secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
+    # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
     resources = ["*"]
   }
 }
@@ -682,7 +684,7 @@ No modules.
 | <a name="input_ephemeral"></a> [ephemeral](#input\_ephemeral) | Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (\_wo) and are not persisted to state. Example: true | `bool` | `false` | no |
 | <a name="input_existing_secrets"></a> [existing\_secrets](#input\_existing\_secrets) | Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing\_secret = "arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret" } | `map(string)` | `{}` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
-| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Use automatically\_after\_days for day-based rotation, or schedule\_expression and optional duration for cron/rate rotation windows; rotate\_immediately can delay the initial rotation until the next scheduled window. Set replica\_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. block\_public\_policy is only honored when manage\_policy\_as\_separate\_resource = true. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Use automatically\_after\_days for day-based rotation, or schedule\_expression and optional duration for cron/rate rotation windows; duration applies to whichever schedule is active, including the module-level automatically\_after\_days default. rotate\_immediately can delay the initial rotation until the next scheduled window. Set replica\_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. block\_public\_policy is only honored when manage\_policy\_as\_separate\_resource = true. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Set replica\_regions to replicate secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. block\_public\_policy is only honored when manage\_policy\_as\_separate\_resource = true. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = "prod", Owner = "team" } | `any` | `{}` | no |
 | <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, avoiding other users changing or rotating secrets by subsequent Terraform runs. Example: true | `bool` | `false` | no |

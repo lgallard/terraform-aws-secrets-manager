@@ -21,7 +21,8 @@ data "aws_iam_policy_document" "secret_policy" {
       identifiers = ["arn:aws:iam::123456789012:role/MyApplicationRole"]
     }
 
-    actions   = ["secretsmanager:GetSecretValue"]
+    actions = ["secretsmanager:GetSecretValue"]
+    # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
     resources = ["*"]
   }
 }
@@ -84,7 +85,7 @@ module "secrets-manager-4" {
 #   filename         = "secrets_manager_rotation.zip"
 #   function_name    = "secrets-manager-rotation"
 #   handler          = "secrets_manager_rotation.lambda_handler"
-#   runtime          = "python3.7"
+#   runtime          = "python3.12"
 #   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
 
 #   environment = {
