@@ -55,6 +55,14 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
+      try(v.recovery_window_in_days, null) == null || try(v.recovery_window_in_days == 0 || (v.recovery_window_in_days >= 7 && v.recovery_window_in_days <= 30), false)
+    ])
+    error_message = "Per-secret recovery_window_in_days for rotating secrets must be 0 (for immediate deletion) or between 7 and 30 days."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.rotate_secrets :
       try(v.kms_key_id, null) == null || can(regex("^(arn:aws(-cn|-us-gov|-iso(-b)?)?:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
@@ -95,7 +103,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.rotate_immediately, null) == null || try(tobool(v.rotate_immediately) == v.rotate_immediately, false)
+      try(v.rotate_immediately, null) == null || try(contains([true, false], v.rotate_immediately), false)
     ])
     error_message = "rotate_immediately must be a boolean when set."
   }
@@ -151,6 +159,14 @@ variable "secrets" {
       for k, v in var.secrets : length(k) >= 1 && length(k) <= 512
     ])
     error_message = "Secret names must be between 1 and 512 characters long."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.secrets :
+      try(v.recovery_window_in_days, null) == null || try(v.recovery_window_in_days == 0 || (v.recovery_window_in_days >= 7 && v.recovery_window_in_days <= 30), false)
+    ])
+    error_message = "Per-secret recovery_window_in_days must be 0 (for immediate deletion) or between 7 and 30 days."
   }
 
   validation {

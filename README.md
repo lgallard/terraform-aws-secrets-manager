@@ -171,9 +171,8 @@ data "aws_iam_policy_document" "secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
-    # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
-    # Example scoped pattern: arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*
-    resources = ["*"]
+    # Example scoped pattern for the rotating secret using this policy.
+    resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*"]
   }
 }
 
@@ -208,9 +207,8 @@ data "aws_iam_policy_document" "validated_secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
-    # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
-    # Example scoped pattern: arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*
-    resources = ["*"]
+    # Example scoped pattern for the rotating secret using this policy.
+    resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*"]
   }
 }
 
@@ -705,7 +703,8 @@ No modules.
 | <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
 | <a name="output_rotate_secret_policies"></a> [rotate\_secret\_policies](#output\_rotate\_secret\_policies) | Map of rotating secret resource policies managed through aws\_secretsmanager\_secret\_policy when manage\_policy\_as\_separate\_resource is enabled. |
 | <a name="output_rotate_secret_versions"></a> [rotate\_secret\_versions](#output\_rotate\_secret\_versions) | Map of managed rotating secret versions with their ARNs and version information. |
-| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. |
+| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Kept for backward compatibility; prefer the equivalent rotating\_secrets output in new configurations. |
+| <a name="output_rotating_secrets"></a> [rotating\_secrets](#output\_rotating\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Alias for rotate\_secrets with a less ambiguous name. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
 | <a name="output_secret_policies"></a> [secret\_policies](#output\_secret\_policies) | Map of regular secret resource policies managed through aws\_secretsmanager\_secret\_policy when manage\_policy\_as\_separate\_resource is enabled. |

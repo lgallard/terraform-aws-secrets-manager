@@ -37,7 +37,23 @@ output "secrets" {
 }
 
 output "rotate_secrets" {
-  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information."
+  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Kept for backward compatibility; prefer the equivalent rotating_secrets output in new configurations."
+  value = { for k, v in aws_secretsmanager_secret.rsm : k => {
+    arn                     = v.arn
+    id                      = v.id
+    name                    = v.name
+    description             = v.description
+    kms_key_id              = v.kms_key_id
+    policy                  = v.policy
+    recovery_window_in_days = v.recovery_window_in_days
+    tags                    = v.tags
+    tags_all                = v.tags_all
+    replica                 = v.replica
+  } }
+}
+
+output "rotating_secrets" {
+  description = "Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Alias for rotate_secrets with a less ambiguous name."
   value = { for k, v in aws_secretsmanager_secret.rsm : k => {
     arn                     = v.arn
     id                      = v.id
@@ -158,4 +174,5 @@ output "existing_secret_versions" {
     version_stages = v.version_stages
     # Note: secret_string and secret_binary are sensitive and not exposed
   } } : {}
+  sensitive = true
 }

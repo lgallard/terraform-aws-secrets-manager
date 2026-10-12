@@ -22,9 +22,8 @@ data "aws_iam_policy_document" "secret_policy" {
     }
 
     actions = ["secretsmanager:GetSecretValue"]
-    # EXAMPLE ONLY: restrict this to specific secret ARNs before deploying.
-    # Example scoped pattern: arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*
-    resources = ["*"]
+    # Example scoped pattern for the rotating secret using this policy.
+    resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*"]
   }
 }
 
@@ -35,18 +34,20 @@ module "secrets-manager-4" {
 
   rotate_secrets = {
     secret-rotate-1 = {
-      description             = "This is a secret to be rotated by a lambda"
-      secret_string           = "This is an example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
-      rotate_immediately      = false
-      recovery_window_in_days = 15
+      description              = "This is a secret to be rotated by a lambda"
+      secret_string            = "This is an example"
+      rotation_lambda_arn      = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      rotate_immediately       = false
+      automatically_after_days = 30
+      recovery_window_in_days  = 15
     },
     secret-rotate-2 = {
-      description             = "This is another secret to be rotated by a lambda"
-      secret_string           = "This is another example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
-      recovery_window_in_days = 7
-      policy                  = data.aws_iam_policy_document.secret_policy.json
+      description              = "This is another secret to be rotated by a lambda"
+      secret_string            = "This is another example"
+      rotation_lambda_arn      = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
+      recovery_window_in_days  = 7
+      automatically_after_days = 30
+      policy                   = data.aws_iam_policy_document.secret_policy.json
       replica_regions = {
         us-west-2 = "arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012"
         eu-west-1 = {
