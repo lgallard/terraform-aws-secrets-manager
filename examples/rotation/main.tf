@@ -59,6 +59,7 @@ module "secrets-manager-4" {
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
       schedule_expression     = "cron(0 8 ? * MON *)"
       duration                = "3h"
+      rotate_immediately      = false # Wait for the next scheduled window instead of rotating on first apply.
       recovery_window_in_days = 7
     },
   }

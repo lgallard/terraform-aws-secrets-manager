@@ -87,14 +87,6 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.duration, null) == null || try(v.schedule_expression, null) != null
-    ])
-    error_message = "duration requires schedule_expression for the rotating secret."
-  }
-
-  validation {
-    condition = alltrue([
-      for k, v in var.rotate_secrets :
       try(v.rotate_immediately, null) == null || can(tobool(v.rotate_immediately))
     ])
     error_message = "rotate_immediately must be a boolean when set."

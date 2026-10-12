@@ -497,9 +497,13 @@ This module includes comprehensive input validation to prevent configuration err
 - Must be between 1-1000 days for `automatically_after_days`
 - Per-secret rotation can use either `automatically_after_days` or `schedule_expression`, not both
 - `schedule_expression` must be a Secrets Manager `cron(...)` or `rate(...)` expression
-- `duration` is optional with `schedule_expression` and must be between `2h` and `72h`
 - `rotate_immediately` can be set per rotating secret to control whether Secrets Manager rotates immediately or waits until the next scheduled window
 - Default: 30 days
+
+### Rotation Window (`duration`)
+- Format: `Nh`, such as `3h`
+- Must be between `2h` and `72h`
+- Can be used with day-based `automatically_after_days` rotation or expression-based `schedule_expression` rotation
 
 ### Version Stages
 - Only `AWSCURRENT` and `AWSPENDING` are valid
