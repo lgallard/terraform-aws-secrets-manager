@@ -32,6 +32,14 @@ variable "rotate_secrets" {
 
   validation {
     condition = alltrue([
+      for k, v in var.rotate_secrets :
+      can(regex("^arn:aws(-cn|-us-gov|-iso(-b)?)?:lambda:[a-z0-9-]+:[0-9]{12}:function:[a-zA-Z0-9_-]+(:[a-zA-Z0-9_$-]+)?$", v.rotation_lambda_arn))
+    ])
+    error_message = "rotation_lambda_arn must be a valid Lambda function ARN."
+  }
+
+  validation {
+    condition = alltrue([
       for k, v in var.rotate_secrets : length(regexall("^[a-zA-Z0-9/_+=.@-]+$", k)) > 0
     ])
     error_message = "Rotate secret names must contain only alphanumeric characters, hyphens, underscores, periods, forward slashes, at signs, plus signs, and equal signs."
@@ -87,7 +95,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.rotate_immediately, null) == null || can(tobool(v.rotate_immediately))
+      try(v.rotate_immediately, null) == null || try(tobool(v.rotate_immediately) == v.rotate_immediately, false)
     ])
     error_message = "rotate_immediately must be a boolean when set."
   }

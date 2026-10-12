@@ -416,7 +416,7 @@ module "rotate_secret_lambda" {
   filename         = "secrets_manager_rotation.zip"
   function_name    = "rotate-secret"
   handler          = "secrets_manager_rotation.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.12"
   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
 
   environment = {
