@@ -122,7 +122,7 @@ output "all_secret_arns" {
 }
 
 output "secrets_by_name" {
-  description = "Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys."
+  description = "Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. If a regular and rotating secret share the same AWS name, the rotating secret ARN wins because Terraform map keys must be unique."
   value = merge(
     { for k, v in aws_secretsmanager_secret.sm : v.name => v.arn },
     { for k, v in aws_secretsmanager_secret.rsm : v.name => v.arn }

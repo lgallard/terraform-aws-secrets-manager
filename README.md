@@ -497,7 +497,7 @@ This module includes comprehensive input validation to prevent configuration err
 - Must be between 1-1000 days for `automatically_after_days`
 - Per-secret rotation can use either `automatically_after_days` or `schedule_expression`, not both
 - `schedule_expression` must be a Secrets Manager `cron(...)` or `rate(...)` expression
-- `duration` is optional with `schedule_expression` and must be an hour value like `3h`
+- `duration` is optional with `schedule_expression` and must be between `2h` and `72h`
 - `rotate_immediately` can be set per rotating secret to control whether Secrets Manager rotates immediately or waits until the next scheduled window
 - Default: 30 days
 
@@ -702,5 +702,5 @@ No modules.
 | <a name="output_secret_rotations"></a> [secret\_rotations](#output\_secret\_rotations) | Map of secret rotation configurations with Lambda ARN and rotation schedule information. |
 | <a name="output_secret_versions"></a> [secret\_versions](#output\_secret\_versions) | Map of managed secret versions with their ARNs and version information. |
 | <a name="output_secrets"></a> [secrets](#output\_secrets) | Complete map of regular secrets with all attributes including ARNs, names, KMS keys, descriptions, and replica information. |
-| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. |
+| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. If a regular and rotating secret share the same AWS name, the rotating secret ARN wins because Terraform map keys must be unique. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

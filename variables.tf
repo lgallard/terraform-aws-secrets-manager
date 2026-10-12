@@ -47,7 +47,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
+      try(v.kms_key_id, null) == null || can(regex("^(arn:aws(-cn|-us-gov|-iso(-b)?)?:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
@@ -79,9 +79,9 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      try(v.duration, null) == null || can(regex("^[1-9][0-9]?h$", v.duration))
+      try(v.duration, null) == null || can(regex("^([2-9]|[1-6][0-9]|7[0-2])h$", v.duration))
     ])
-    error_message = "duration must be an hour value like 3h and match the AWS pattern [0-9]+h."
+    error_message = "duration must be between 2h and 72h (for example, 3h)."
   }
 
   validation {
@@ -111,7 +111,7 @@ variable "rotate_secrets" {
   validation {
     condition = alltrue([
       for k, v in var.rotate_secrets :
-      can(v.secret_string) && can(v.secret_binary) ? false : true
+      !(try(v.secret_string, null) != null && try(v.secret_binary, null) != null)
     ])
     error_message = "Cannot specify both secret_string and secret_binary for the same secret."
   }
@@ -156,7 +156,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets :
-      try(v.kms_key_id, null) == null || can(regex("^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
+      try(v.kms_key_id, null) == null || can(regex("^(arn:aws(-cn|-us-gov|-iso(-b)?)?:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36}|alias/[a-zA-Z0-9/_-]+|[a-f0-9-]{36})$", v.kms_key_id))
     ])
     error_message = "KMS key ID must be a valid KMS key ARN, alias, or key ID format."
   }
@@ -172,7 +172,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets :
-      can(v.secret_string) && can(v.secret_binary) ? false : true
+      !(try(v.secret_string, null) != null && try(v.secret_binary, null) != null)
     ])
     error_message = "Cannot specify both secret_string and secret_binary for the same secret."
   }
