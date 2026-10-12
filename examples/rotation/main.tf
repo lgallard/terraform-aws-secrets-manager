@@ -35,14 +35,14 @@ module "secrets-manager-4" {
     secret-rotate-1 = {
       description             = "This is a secret to be rotated by a lambda"
       secret_string           = "This is an example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
       rotate_immediately      = false
       recovery_window_in_days = 15
     },
     secret-rotate-2 = {
       description             = "This is another secret to be rotated by a lambda"
       secret_string           = "This is another example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
       recovery_window_in_days = 7
       policy                  = data.aws_iam_policy_document.secret_policy.json
       replica_regions = {
@@ -56,7 +56,7 @@ module "secrets-manager-4" {
     secret-rotate-cron = {
       description             = "This secret rotates during a scheduled UTC rotation window"
       secret_string           = "This is a scheduled rotation example"
-      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123455678910:function:lambda-rotate-secret"
+      rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:lambda-rotate-secret"
       schedule_expression     = "cron(0 8 ? * MON *)"
       duration                = "3h"
       rotate_immediately      = false # Wait for the next scheduled window instead of rotating on first apply.

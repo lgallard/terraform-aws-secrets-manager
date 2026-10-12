@@ -45,7 +45,9 @@ locals {
       rotate_immediately                 = lookup(v, "rotate_immediately", null)
       schedule_expression                = lookup(v, "schedule_expression", null)
       duration                           = lookup(v, "duration", null)
-      automatically_after_days           = lookup(v, "schedule_expression", null) == null ? lookup(v, "automatically_after_days", var.automatically_after_days) : lookup(v, "automatically_after_days", null)
+      # Do not apply the module default automatically_after_days when schedule_expression is set,
+      # because AWS rejects rotation rules that set both scheduling styles.
+      automatically_after_days = lookup(v, "schedule_expression", null) == null ? lookup(v, "automatically_after_days", var.automatically_after_days) : lookup(v, "automatically_after_days", null)
       # Computed name based on priority: name > name_prefix > key
       computed_name        = lookup(v, "name", null) != null ? lookup(v, "name", null) : (lookup(v, "name_prefix", null) != null ? null : k)
       computed_name_prefix = lookup(v, "name_prefix", null)
