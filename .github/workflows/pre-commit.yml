@@ -35,12 +35,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.14'
+          python-version: '3.15'
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: 'v1.16.5'
+          terraform_version: 'v1.17.1'
 
       - name: Install tflint
         run: |
