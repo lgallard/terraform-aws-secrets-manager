@@ -26,6 +26,8 @@ AWS Secrets Manager helps you protect secrets needed to access your applications
 
 The module declares the AWS provider minimum at the root, so all usage modes use the same compatibility policy. Ephemeral mode additionally requires setting `secret_string_wo_version >= 1` for every managed secret value.
 
+> **Ephemeral binary secret note:** when `ephemeral = true`, binary inputs are base64-encoded and written through the provider's `secret_string_wo` write-only argument. Applications that need AWS `SecretBinary` semantics should keep ephemeral mode disabled for those secrets, or store/retrieve the base64 value intentionally as a string.
+
 ## Examples
 
 Check the [examples](/examples/) folder where you can see the complete compilation of snippets.
@@ -96,6 +98,8 @@ module "secrets-manager-2" {
 ```
 
 ### Binary secrets
+
+Pass `secret_binary` values as raw strings. The module applies `base64encode()` before passing the value to the provider's `secret_binary` argument, so do not pre-encode values unless the consuming application intentionally expects a double-encoded payload.
 
 ```hcl
 module "secrets-manager-3" {
@@ -169,7 +173,8 @@ data "aws_iam_policy_document" "secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["*"]
+    # Example scoped pattern for the rotating secret using this policy.
+    resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*"]
   }
 }
 
@@ -204,7 +209,8 @@ data "aws_iam_policy_document" "validated_secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["*"]
+    # Example scoped pattern for the rotating secret using this policy.
+    resources = ["arn:aws:secretsmanager:us-east-1:123456789012:secret:secret-rotate-2-*"]
   }
 }
 
@@ -383,6 +389,18 @@ module "secrets-manager-rotation" {
       rotation_lambda_arn     = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
       automatically_after_days = 7
       recovery_window_in_days = 7
+    },
+    hourly-token = {
+      description         = "Token rotated by schedule expression"
+      secret_string       = "initial-token"
+      rotation_lambda_arn = "arn:aws:lambda:us-east-1:123456789012:function:rotate-secret"
+
+      # Use either automatically_after_days or schedule_expression, not both.
+      schedule_expression = "rate(12 hours)"
+      duration            = "2h"
+
+      # Delay the initial rotation until the next scheduled window.
+      rotate_immediately = false
     }
   }
 
@@ -402,7 +420,7 @@ module "rotate_secret_lambda" {
   filename         = "secrets_manager_rotation.zip"
   function_name    = "rotate-secret"
   handler          = "secrets_manager_rotation.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.12"
   source_code_hash = filebase64sha256("${path.module}/secrets_manager_rotation.zip")
 
   environment = {
@@ -482,8 +500,16 @@ This module includes comprehensive input validation to prevent configuration err
 - Default: 30 days
 
 ### Rotation Frequency
-- Must be between 1-365 days for `automatically_after_days`
+- Must be between 1-1000 days for `automatically_after_days`
+- Per-secret rotation can use either `automatically_after_days` or `schedule_expression`, not both
+- `schedule_expression` must be a Secrets Manager `cron(...)` or `rate(...)` expression
+- `rotate_immediately` can be set per rotating secret to control whether Secrets Manager rotates immediately or waits until the next scheduled window
 - Default: 30 days
+
+### Rotation Window (`duration`)
+- Format: `Nh`, such as `3h`
+- Must be between `2h` and `72h`
+- Can be used with day-based `automatically_after_days` rotation or expression-based `schedule_expression` rotation
 
 ### Version Stages
 - Only `AWSCURRENT` and `AWSPENDING` are valid
@@ -631,7 +657,7 @@ Successfully moved 1 object(s).
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.65.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.68.0 |
 
 ## Modules
 
@@ -657,12 +683,12 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the number of days between automatic scheduled rotations of the secret. Must be between 1 and 365 days. Example: 30 | `number` | `30` | no |
+| <a name="input_automatically_after_days"></a> [automatically\_after\_days](#input\_automatically\_after\_days) | Specifies the default number of days between automatic scheduled rotations of the secret. Must be between 1 and 1000 days. Per-secret rotate\_secrets entries can override this with automatically\_after\_days or use schedule\_expression instead. Example: 30 | `number` | `30` | no |
 | <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to apply to all resources. These are merged with resource-specific tags. Example: { Environment = "prod", ManagedBy = "terraform" } | `map(string)` | `{}` | no |
 | <a name="input_ephemeral"></a> [ephemeral](#input\_ephemeral) | Enable ephemeral resources and write-only arguments to prevent sensitive data from being stored in state. Requires Terraform >= 1.11. When enabled, secret values use write-only arguments (\_wo) and are not persisted to state. Example: true | `bool` | `false` | no |
 | <a name="input_existing_secrets"></a> [existing\_secrets](#input\_existing\_secrets) | Map of existing secret names or ARNs to import as data sources. Useful for referencing secrets created outside this module. Example: { existing\_secret = "arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret" } | `map(string)` | `{}` | no |
 | <a name="input_recovery_window_in_days"></a> [recovery\_window\_in\_days](#input\_recovery\_window\_in\_days) | Specifies the number of days that AWS Secrets Manager waits before it can delete the secret. This value can be 0 to force deletion without recovery or range from 7 to 30 days. Example: 7 | `number` | `30` | no |
-| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Set replica\_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. block\_public\_policy is only honored when manage\_policy\_as\_separate\_resource = true. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
+| <a name="input_rotate_secrets"></a> [rotate\_secrets](#input\_rotate\_secrets) | Map of secrets to keep and rotate in AWS Secrets Manager. Each secret must include rotation\_lambda\_arn. Use automatically\_after\_days for day-based rotation, or schedule\_expression and optional duration for cron/rate rotation windows; duration applies to whichever schedule is active, including the module-level automatically\_after\_days default. rotate\_immediately can delay the initial rotation until the next scheduled window. Set replica\_regions to replicate rotating secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. block\_public\_policy is only honored when manage\_policy\_as\_separate\_resource = true. Example: { mysecret = { description = "My secret", secret\_string = "secret-value", rotation\_lambda\_arn = "arn:aws:lambda:us-east-1:123456789012:function:my-function" } } | `any` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Map of secrets to keep in AWS Secrets Manager. Set replica\_regions to replicate secrets across regions. AWS Secrets Manager replicates secret metadata, including resource policies, to replicas automatically. Set policy for the legacy inline policy behavior; set manage\_policy\_as\_separate\_resource = true with block\_public\_policy to use aws\_secretsmanager\_secret\_policy and Zelkova broad-access validation. block\_public\_policy is only honored when manage\_policy\_as\_separate\_resource = true. Example: { mysecret = { description = "My secret", secret\_string = "secret-value" } } | `any` | `{}` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Key-value map of user-defined tags attached to the secret. Keys cannot start with 'aws:'. Example: { Environment = "prod", Owner = "team" } | `any` | `{}` | no |
 | <a name="input_unmanaged"></a> [unmanaged](#input\_unmanaged) | Terraform must ignore secrets lifecycle. Using this option you can initialize the secrets and rotate them outside Terraform, avoiding other users changing or rotating secrets by subsequent Terraform runs. Example: true | `bool` | `false` | no |
@@ -679,12 +705,13 @@ No modules.
 | <a name="output_rotate_secret_ids"></a> [rotate\_secret\_ids](#output\_rotate\_secret\_ids) | Map of rotating secret names to their resource IDs. Use these IDs to reference rotating secrets in other Terraform resources. |
 | <a name="output_rotate_secret_policies"></a> [rotate\_secret\_policies](#output\_rotate\_secret\_policies) | Map of rotating secret resource policies managed through aws\_secretsmanager\_secret\_policy when manage\_policy\_as\_separate\_resource is enabled. |
 | <a name="output_rotate_secret_versions"></a> [rotate\_secret\_versions](#output\_rotate\_secret\_versions) | Map of managed rotating secret versions with their ARNs and version information. |
-| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. |
+| <a name="output_rotate_secrets"></a> [rotate\_secrets](#output\_rotate\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Kept for backward compatibility; prefer the equivalent rotating\_secrets output in new configurations. |
+| <a name="output_rotating_secrets"></a> [rotating\_secrets](#output\_rotating\_secrets) | Complete map of rotating secrets with all attributes including ARNs, names, KMS keys, descriptions, replica information, and rotation information. Alias for rotate\_secrets with a less ambiguous name. |
 | <a name="output_secret_arns"></a> [secret\_arns](#output\_secret\_arns) | Map of secret names to their ARNs. Use these ARNs to grant permissions or reference secrets in IAM policies and other AWS resources. |
 | <a name="output_secret_ids"></a> [secret\_ids](#output\_secret\_ids) | Map of secret names to their resource IDs. Use these IDs to reference secrets in other Terraform resources. |
 | <a name="output_secret_policies"></a> [secret\_policies](#output\_secret\_policies) | Map of regular secret resource policies managed through aws\_secretsmanager\_secret\_policy when manage\_policy\_as\_separate\_resource is enabled. |
 | <a name="output_secret_rotations"></a> [secret\_rotations](#output\_secret\_rotations) | Map of secret rotation configurations with Lambda ARN and rotation schedule information. |
 | <a name="output_secret_versions"></a> [secret\_versions](#output\_secret\_versions) | Map of managed secret versions with their ARNs and version information. |
 | <a name="output_secrets"></a> [secrets](#output\_secrets) | Complete map of regular secrets with all attributes including ARNs, names, KMS keys, descriptions, and replica information. |
-| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. |
+| <a name="output_secrets_by_name"></a> [secrets\_by\_name](#output\_secrets\_by\_name) | Map of actual secret names to their ARNs, useful for referencing secrets by their AWS names rather than Terraform keys. Avoid configuring regular and rotating secrets with the same AWS name; if a collision exists, the rotating secret ARN wins because Terraform map keys must be unique. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
