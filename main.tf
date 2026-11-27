@@ -42,7 +42,12 @@ locals {
       secret_binary                      = lookup(v, "secret_binary", null)
       secret_string_wo_version           = lookup(v, "secret_string_wo_version", null)
       rotation_lambda_arn                = lookup(v, "rotation_lambda_arn", null)
-      automatically_after_days           = lookup(v, "automatically_after_days", var.automatically_after_days)
+      rotate_immediately                 = lookup(v, "rotate_immediately", null)
+      schedule_expression                = lookup(v, "schedule_expression", null)
+      duration                           = lookup(v, "duration", null)
+      # Do not apply the module default automatically_after_days when schedule_expression is set,
+      # because AWS rejects rotation rules that set both scheduling styles.
+      automatically_after_days = lookup(v, "schedule_expression", null) == null ? lookup(v, "automatically_after_days", var.automatically_after_days) : lookup(v, "automatically_after_days", null)
       # Computed name based on priority: name > name_prefix > key
       computed_name        = lookup(v, "name", null) != null ? lookup(v, "name", null) : (lookup(v, "name_prefix", null) != null ? null : k)
       computed_name_prefix = lookup(v, "name_prefix", null)
@@ -232,9 +237,12 @@ resource "aws_secretsmanager_secret_rotation" "rsm-sr" {
   for_each            = var.rotate_secrets
   secret_id           = aws_secretsmanager_secret.rsm[each.key].arn
   rotation_lambda_arn = local.rotate_secrets_config[each.key].rotation_lambda_arn
+  rotate_immediately  = local.rotate_secrets_config[each.key].rotate_immediately
 
   rotation_rules {
     automatically_after_days = local.rotate_secrets_config[each.key].automatically_after_days
+    schedule_expression      = local.rotate_secrets_config[each.key].schedule_expression
+    duration                 = local.rotate_secrets_config[each.key].duration
   }
   depends_on = [aws_secretsmanager_secret.rsm]
 

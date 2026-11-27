@@ -6,6 +6,8 @@ This example demonstrates how to use the ephemeral feature to prevent sensitive 
 
 When `ephemeral = true` is set, the module uses write-only arguments (`_wo` parameters) that prevent sensitive values from being persisted in the Terraform state file. This feature requires Terraform 1.11 or later.
 
+> **Binary secret note:** ephemeral mode writes binary inputs through `secret_string_wo` as base64-encoded strings, not AWS `SecretBinary`. Applications that require `SecretBinary` should keep ephemeral mode disabled for those secrets, or intentionally consume the base64 string value.
+
 ## Key Features
 
 - **Security**: Sensitive values are not stored in Terraform state
